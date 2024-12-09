@@ -126,6 +126,13 @@ void rtnl_kfree_skbs(struct sk_buff *head, struct sk_buff *tail);
 	WARN_ONCE(!rtnl_is_locked(), \
 		  "RTNL: assertion failed at %s (%d)\n", __FILE__,  __LINE__)
 
+/* Shared by rtnl_fdb_dump() and various ndo_fdb_dump() helpers. */
+struct ndo_fdb_dump_context {
+	unsigned long s_h;
+	unsigned long s_idx;
+	unsigned long fdb_idx;
+};
+
 extern int ndo_dflt_fdb_dump(struct sk_buff *skb,
 			     struct netlink_callback *cb,
 			     struct net_device *dev,

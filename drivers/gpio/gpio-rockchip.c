@@ -758,6 +758,7 @@ static int rockchip_gpiolib_register(struct rockchip_pin_bank *bank)
 	gc->ngpio = bank->nr_pins;
 	gc->label = bank->name;
 	gc->parent = bank->dev;
+	gc->can_sleep = true;
 
 	if (!gc->base)
 		gc->base = GPIO_MAX_PINS * bank->bank_num;

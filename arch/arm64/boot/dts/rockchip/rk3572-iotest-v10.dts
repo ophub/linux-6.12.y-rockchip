@@ -27,6 +27,8 @@
 };
 
 &u2phy0_otg {
+	rockchip,vbus-always-on;
+	rockchip,sel-pipe-phystatus;
 	status = "okay";
 };
 

@@ -698,6 +698,7 @@ static void __exit xt_flowoffload_tg_exit(void)
 	nf_flow_table_free(&flowtable[1].ft);
 }
 
+MODULE_DESCRIPTION("Xtables: flowoffload");
 MODULE_LICENSE("GPL");
 module_init(xt_flowoffload_tg_init);
 module_exit(xt_flowoffload_tg_exit);

@@ -5895,7 +5895,7 @@ static int panel_simple_dsi_probe(struct mipi_dsi_device *dsi)
 			err = PTR_ERR(panel->base.backlight);
 			dev_err(dev, "failed to register dcs backlight: %d\n",
 				err);
-			return err;
+			goto cleanup_panel;
 		}
 	}
 
@@ -5904,11 +5904,13 @@ static int panel_simple_dsi_probe(struct mipi_dsi_device *dsi)
 	dsi->lanes = desc->lanes;
 
 	err = mipi_dsi_attach(dsi);
-	if (err) {
-		struct panel_simple *panel = mipi_dsi_get_drvdata(dsi);
+	if (err)
+		goto cleanup_panel;
 
-		drm_panel_remove(&panel->base);
-	}
+	return 0;
+
+cleanup_panel:
+	panel_simple_remove(dev);
 
 	return err;
 }

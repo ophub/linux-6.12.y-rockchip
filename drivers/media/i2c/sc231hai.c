@@ -603,6 +603,14 @@ static int sc231hai_write_array(struct i2c_client *client,
 	return ret;
 }
 
+static int __maybe_unused sc231hai_write_array_wrapper(struct i2c_client *client,
+						       void *buf)
+{
+	const struct regval *table = buf;
+
+	return sc231hai_write_array(client, table);
+}
+
 /* Read registers up to 4 at a time */
 static int sc231hai_read_reg(struct i2c_client *client, u16 reg, unsigned int len,
 			     u32 *val)
@@ -1000,12 +1008,13 @@ static int sc231hai_g_frame_interval(struct v4l2_subdev *sd,
 				     struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc231hai *sc231hai = to_sc231hai(sd);
-	const struct sc231hai_mode *mode = sc231hai->cur_mode;
 
+	mutex_lock(&sc231hai->mutex);
 	if (sc231hai->streaming)
 		fi->interval = sc231hai->cur_fps;
 	else
-		fi->interval = mode->max_fps;
+		fi->interval = sc231hai->cur_mode->max_fps;
+	mutex_unlock(&sc231hai->mutex);
 
 	return 0;
 }
@@ -1042,9 +1051,6 @@ static int sc231hai_s_frame_interval(struct v4l2_subdev *sd,
 	struct v4l2_fract *fract = &fi->interval;
 	int fps;
 
-	if (sc231hai->streaming)
-		return -EBUSY;
-
 	if (fi->pad != 0)
 		return -EINVAL;
 
@@ -1052,16 +1058,27 @@ static int sc231hai_s_frame_interval(struct v4l2_subdev *sd,
 		v4l2_err(sd, "error param, check interval param\n");
 		return -EINVAL;
 	}
+
+	mutex_lock(&sc231hai->mutex);
+
+	if (sc231hai->streaming) {
+		mutex_unlock(&sc231hai->mutex);
+		return -EBUSY;
+	}
+
 	fps = DIV_ROUND_CLOSEST(fract->denominator, fract->numerator);
 	mode = sc231hai_find_mode(sc231hai, fps);
 	if (mode == NULL) {
 		v4l2_err(sd, "couldn't match fi\n");
+		mutex_unlock(&sc231hai->mutex);
 		return -EINVAL;
 	}
 
 	sc231hai->cur_mode = mode;
 
 	sc231hai_set_rates(sc231hai);
+
+	mutex_unlock(&sc231hai->mutex);
 
 	return 0;
 }
@@ -1614,7 +1631,7 @@ static int sc231hai_suspend(struct device *dev)
 
 	cam_sw_write_array_cb_init(sc231hai->cam_sw_info, client,
 				   (void *)sc231hai->cur_mode->reg_list,
-				   (sensor_write_array)sc231hai_write_array);
+				   sc231hai_write_array_wrapper);
 	cam_sw_prepare_sleep(sc231hai->cam_sw_info);
 
 	return 0;
@@ -1710,10 +1727,10 @@ static const struct v4l2_subdev_pad_ops sc231hai_pad_ops = {
 	.enum_frame_size = sc231hai_enum_frame_sizes,
 	.enum_frame_interval = sc231hai_enum_frame_interval,
 	.get_fmt = sc231hai_get_fmt,
-	.get_frame_interval = sc231hai_g_frame_interval,
-	.set_frame_interval = sc231hai_s_frame_interval,
 	.set_fmt = sc231hai_set_fmt,
 	.get_mbus_config = sc231hai_g_mbus_config,
+	.get_frame_interval = sc231hai_g_frame_interval,
+	.set_frame_interval = sc231hai_s_frame_interval,
 };
 
 static const struct v4l2_subdev_ops sc231hai_subdev_ops = {

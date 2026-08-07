@@ -82,12 +82,6 @@ struct sensor_state_check_work {
 #define JAGUAR1_NAME				"jaguar1"
 
 /* #define FORCE_720P */
-
-struct jaguar1_gpio {
-	int pltfrm_gpio;
-	const char *label;
-};
-
 struct jaguar1_regulator {
 	struct regulator *regulator;
 	u32 min_uV;
@@ -1112,9 +1106,9 @@ static const struct v4l2_subdev_pad_ops jaguar1_subdev_pad_ops = {
 	.enum_frame_size = jaguar1_enum_frame_sizes,
 	.enum_frame_interval = jaguar1_enum_frame_interval,
 	.get_fmt = jaguar1_get_fmt,
-	.get_frame_interval = jaguar1_g_frame_interval,
 	.set_fmt = jaguar1_set_fmt,
 	.get_mbus_config = jaguar1_g_mbus_config,
+	.get_frame_interval = jaguar1_g_frame_interval,
 };
 
 static const struct v4l2_subdev_core_ops jaguar1_core_ops = {

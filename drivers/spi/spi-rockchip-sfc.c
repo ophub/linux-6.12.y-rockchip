@@ -332,7 +332,7 @@ static void rockchip_sfc_set_delay_lines(struct rockchip_sfc *sfc, u16 cells, u8
 
 static int rockchip_sfc_clk_set_rate(struct rockchip_sfc *sfc, unsigned long  speed)
 {
-	if (sfc->version < SFC_VER_8 || sfc->sclk_x2_bypass)
+	if (((sfc->version > SFC_VER_3) && (sfc->version < SFC_VER_8)) || sfc->sclk_x2_bypass)
 		return clk_set_rate(sfc->clk, speed);
 	else
 		return clk_set_rate(sfc->clk, speed * 2);
@@ -340,7 +340,7 @@ static int rockchip_sfc_clk_set_rate(struct rockchip_sfc *sfc, unsigned long  sp
 
 static unsigned long rockchip_sfc_clk_get_rate(struct rockchip_sfc *sfc)
 {
-	if (sfc->version < SFC_VER_8 || sfc->sclk_x2_bypass)
+	if (((sfc->version > SFC_VER_3) && (sfc->version < SFC_VER_8)) || sfc->sclk_x2_bypass)
 		return clk_get_rate(sfc->clk);
 	else
 		return clk_get_rate(sfc->clk) / 2;

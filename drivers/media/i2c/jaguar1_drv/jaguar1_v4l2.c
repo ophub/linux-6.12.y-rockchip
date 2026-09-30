@@ -86,7 +86,6 @@ struct sensor_state_check_work {
 struct jaguar1_gpio {
 	int pltfrm_gpio;
 	const char *label;
-	enum of_gpio_flags active_low;
 };
 
 struct jaguar1_regulator {
@@ -883,6 +882,7 @@ static int jaguar1_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int jaguar1_g_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct jaguar1 *jaguar1 = to_jaguar1(sd);
@@ -1105,7 +1105,6 @@ static const struct dev_pm_ops jaguar1_pm_ops = {
 static const struct v4l2_subdev_video_ops jaguar1_video_ops = {
 	.g_input_status = jaguar1_g_input_status,
 	.s_stream = jaguar1_stream,
-	.g_frame_interval = jaguar1_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops jaguar1_subdev_pad_ops = {
@@ -1113,6 +1112,7 @@ static const struct v4l2_subdev_pad_ops jaguar1_subdev_pad_ops = {
 	.enum_frame_size = jaguar1_enum_frame_sizes,
 	.enum_frame_interval = jaguar1_enum_frame_interval,
 	.get_fmt = jaguar1_get_fmt,
+	.get_frame_interval = jaguar1_g_frame_interval,
 	.set_fmt = jaguar1_set_fmt,
 	.get_mbus_config = jaguar1_g_mbus_config,
 };

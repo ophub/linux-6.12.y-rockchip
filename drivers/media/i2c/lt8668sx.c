@@ -414,7 +414,7 @@ static const struct lt8668sx_mode supported_modes_cphy[] = {
 
 static void lt8668sx_format_change(struct v4l2_subdev *sd);
 static int lt8668sx_s_ctrl_detect_tx_5v(struct v4l2_subdev *sd);
-static int lt8668sx_s_dv_timings(struct v4l2_subdev *sd,
+static int lt8668sx_s_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				struct v4l2_dv_timings *timings);
 
 static inline struct lt8668sx *to_lt8668sx(struct v4l2_subdev *sd)
@@ -813,7 +813,7 @@ static void lt8668sx_format_change(struct v4l2_subdev *sd)
 
 	if (!lt8668sx_match_timings(lt8668sx, &lt8668sx->timings, &timings)) {
 		/* automatically set timing rather than set by user */
-		lt8668sx_s_dv_timings(sd, &timings);
+		lt8668sx_s_dv_timings(sd, 0, &timings);
 		lt8668sx_print_dv_timings(sd,
 				"Format_change: New format: ");
 		if (sd->devnode && !lt8668sx->i2c_client->irq)
@@ -898,7 +898,7 @@ static int lt8668sx_g_input_status(struct v4l2_subdev *sd, u32 *status)
 	return 0;
 }
 
-static int lt8668sx_s_dv_timings(struct v4l2_subdev *sd,
+static int lt8668sx_s_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				 struct v4l2_dv_timings *timings)
 {
 	struct lt8668sx *lt8668sx = to_lt8668sx(sd);
@@ -921,7 +921,7 @@ static int lt8668sx_s_dv_timings(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int lt8668sx_g_dv_timings(struct v4l2_subdev *sd,
+static int lt8668sx_g_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				struct v4l2_dv_timings *timings)
 {
 	struct lt8668sx *lt8668sx = to_lt8668sx(sd);
@@ -941,7 +941,7 @@ static int lt8668sx_enum_dv_timings(struct v4l2_subdev *sd,
 			&lt8668sx_timings_cap, NULL, NULL);
 }
 
-static int lt8668sx_query_dv_timings(struct v4l2_subdev *sd,
+static int lt8668sx_query_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				struct v4l2_dv_timings *timings)
 {
 	struct lt8668sx *lt8668sx = to_lt8668sx(sd);
@@ -1346,9 +1346,6 @@ static const struct v4l2_subdev_core_ops lt8668sx_core_ops = {
 
 static const struct v4l2_subdev_video_ops lt8668sx_video_ops = {
 	.g_input_status = lt8668sx_g_input_status,
-	.s_dv_timings = lt8668sx_s_dv_timings,
-	.g_dv_timings = lt8668sx_g_dv_timings,
-	.query_dv_timings = lt8668sx_query_dv_timings,
 	.s_stream = lt8668sx_s_stream,
 };
 
@@ -1362,6 +1359,9 @@ static const struct v4l2_subdev_pad_ops lt8668sx_pad_ops = {
 	.dv_timings_cap = lt8668sx_dv_timings_cap,
 	.get_mbus_config = lt8668sx_g_mbus_config,
 	.get_frame_interval = lt8668sx_g_frame_interval,
+	.s_dv_timings = lt8668sx_s_dv_timings,
+	.g_dv_timings = lt8668sx_g_dv_timings,
+	.query_dv_timings = lt8668sx_query_dv_timings,
 };
 
 static const struct v4l2_subdev_ops lt8668sx_ops = {

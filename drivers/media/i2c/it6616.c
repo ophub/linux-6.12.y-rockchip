@@ -937,7 +937,7 @@ struct it6616_reg_set it6616_hdmi_init_table[] = {
 static struct it6616 *g_it6616;
 static void it6616_format_change(struct v4l2_subdev *sd);
 static int it6616_s_ctrl_detect_tx_5v(struct v4l2_subdev *sd);
-static int it6616_s_dv_timings(struct v4l2_subdev *sd,
+static int it6616_s_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				struct v4l2_dv_timings *timings);
 
 static inline struct it6616 *to_it6616(struct v4l2_subdev *sd)
@@ -3491,7 +3491,7 @@ static void it6616_format_change(struct v4l2_subdev *sd)
 
 	if (!it6616_match_dv_timings(&it6616->timings, &timings)) {
 		/* automatically set timing rather than set by user */
-		it6616_s_dv_timings(sd, &timings);
+		it6616_s_dv_timings(sd, 0, &timings);
 		v4l2_print_dv_timings(sd->name,
 				"Format_change: New format: ",
 				&timings, false);
@@ -3511,7 +3511,7 @@ static int it6616_isr(struct v4l2_subdev *sd, u32 status, bool *handled)
 		it6616_intp_threaded_handler(0, it6616);
 		it6616_format_change(sd);
 	} else {
-		it6616_s_dv_timings(sd, &default_timing);
+		it6616_s_dv_timings(sd, 0, &default_timing);
 		it6616->nosignal = true;
 		v4l2_dbg(1, debug, sd, "%s: HDMI unplug!!!\n", __func__);
 	}
@@ -3567,7 +3567,7 @@ static int it6616_g_input_status(struct v4l2_subdev *sd, u32 *status)
 	return 0;
 }
 
-static int it6616_s_dv_timings(struct v4l2_subdev *sd,
+static int it6616_s_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				 struct v4l2_dv_timings *timings)
 {
 	struct it6616 *it6616 = to_it6616(sd);
@@ -3595,7 +3595,7 @@ static int it6616_s_dv_timings(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int it6616_g_dv_timings(struct v4l2_subdev *sd,
+static int it6616_g_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				struct v4l2_dv_timings *timings)
 {
 	struct it6616 *it6616 = to_it6616(sd);
@@ -3615,7 +3615,7 @@ static int it6616_enum_dv_timings(struct v4l2_subdev *sd,
 			&it6616_timings_cap, NULL, NULL);
 }
 
-static int it6616_query_dv_timings(struct v4l2_subdev *sd,
+static int it6616_query_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				struct v4l2_dv_timings *timings)
 {
 	struct it6616 *it6616 = to_it6616(sd);
@@ -4008,9 +4008,6 @@ static const struct v4l2_subdev_core_ops it6616_core_ops = {
 
 static const struct v4l2_subdev_video_ops it6616_video_ops = {
 	.g_input_status = it6616_g_input_status,
-	.s_dv_timings = it6616_s_dv_timings,
-	.g_dv_timings = it6616_g_dv_timings,
-	.query_dv_timings = it6616_query_dv_timings,
 	.s_stream = it6616_s_stream,
 };
 
@@ -4024,6 +4021,9 @@ static const struct v4l2_subdev_pad_ops it6616_pad_ops = {
 	.dv_timings_cap = it6616_dv_timings_cap,
 	.get_mbus_config = it6616_g_mbus_config,
 	.get_frame_interval = it6616_g_frame_interval,
+	.s_dv_timings = it6616_s_dv_timings,
+	.g_dv_timings = it6616_g_dv_timings,
+	.query_dv_timings = it6616_query_dv_timings,
 };
 
 static const struct v4l2_subdev_ops it6616_ops = {

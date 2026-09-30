@@ -237,7 +237,7 @@ static void lt8619c_wait_for_signal_stable(struct v4l2_subdev *sd);
 static void lt8619c_yuv_config(struct v4l2_subdev *sd);
 static void lt8619c_format_change(struct v4l2_subdev *sd);
 static void enable_stream(struct v4l2_subdev *sd, bool enable);
-static int lt8619c_s_dv_timings(struct v4l2_subdev *sd,
+static int lt8619c_s_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 			struct v4l2_dv_timings *timings);
 static void LVDSPLL_Lock_Det(struct v4l2_subdev *sd);
 static void LT8619C_phase_config(struct v4l2_subdev *sd);
@@ -953,7 +953,7 @@ static void lt8619c_initial_setup(struct v4l2_subdev *sd)
 		schedule_delayed_work(&lt8619c->delayed_work_monitor_resolution,
 				HZ / 10);
 	} else {
-		lt8619c_s_dv_timings(sd, &default_timing);
+		lt8619c_s_dv_timings(sd, 0, &default_timing);
 	}
 
 	v4l2_dbg(1, debug, sd, "%s: init ok\n", __func__);
@@ -971,7 +971,7 @@ static void lt8619c_format_change(struct v4l2_subdev *sd)
 	lt8619c_get_detected_timings(sd, &timings);
 	if (!v4l2_match_dv_timings(&lt8619c->timings, &timings, 0, false)) {
 		/* automatically set timing rather than set by userspace */
-		lt8619c_s_dv_timings(sd, &timings);
+		lt8619c_s_dv_timings(sd, 0, &timings);
 		v4l2_print_dv_timings(sd->name,
 			"lt8619c_format_change: New format: ", &timings, false);
 
@@ -1060,7 +1060,7 @@ static int lt8619c_g_input_status(struct v4l2_subdev *sd, u32 *status)
 	return 0;
 }
 
-static int lt8619c_s_dv_timings(struct v4l2_subdev *sd,
+static int lt8619c_s_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				 struct v4l2_dv_timings *timings)
 {
 	struct lt8619c *lt8619c = to_lt8619c(sd);
@@ -1088,7 +1088,7 @@ static int lt8619c_s_dv_timings(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int lt8619c_g_dv_timings(struct v4l2_subdev *sd,
+static int lt8619c_g_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 				 struct v4l2_dv_timings *timings)
 {
 	struct lt8619c *lt8619c = to_lt8619c(sd);
@@ -1107,7 +1107,7 @@ static int lt8619c_enum_dv_timings(struct v4l2_subdev *sd,
 	return v4l2_enum_dv_timings_cap(timings, &lt8619c_timings_cap, NULL, NULL);
 }
 
-static int lt8619c_query_dv_timings(struct v4l2_subdev *sd,
+static int lt8619c_query_dv_timings(struct v4l2_subdev *sd, unsigned int pad,
 		struct v4l2_dv_timings *timings)
 {
 	int ret;
@@ -1520,9 +1520,6 @@ static const struct v4l2_subdev_core_ops lt8619c_core_ops = {
 
 static const struct v4l2_subdev_video_ops lt8619c_video_ops = {
 	.g_input_status = lt8619c_g_input_status,
-	.s_dv_timings = lt8619c_s_dv_timings,
-	.g_dv_timings = lt8619c_g_dv_timings,
-	.query_dv_timings = lt8619c_query_dv_timings,
 	.s_stream = lt8619c_s_stream,
 	.querystd = lt8619c_querystd,
 };
@@ -1539,6 +1536,9 @@ static const struct v4l2_subdev_pad_ops lt8619c_pad_ops = {
 	.dv_timings_cap = lt8619c_dv_timings_cap,
 	.get_mbus_config = lt8619c_g_mbus_config,
 	.get_frame_interval = lt8619c_g_frame_interval,
+	.s_dv_timings = lt8619c_s_dv_timings,
+	.g_dv_timings = lt8619c_g_dv_timings,
+	.query_dv_timings = lt8619c_query_dv_timings,
 };
 
 static const struct v4l2_subdev_ops lt8619c_ops = {

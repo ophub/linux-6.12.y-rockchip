@@ -258,7 +258,7 @@ static int gh2dpk_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&gh2dpk->mutex);
 		return -ENOTTY;
@@ -282,7 +282,7 @@ static int gh2dpk_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&gh2dpk->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&gh2dpk->mutex);
 		return -ENOTTY;
@@ -335,6 +335,7 @@ static int gh2dpk_enum_frame_sizes(struct v4l2_subdev *sd,
 }
 
 static int gh2dpk_g_frame_interval(struct v4l2_subdev *sd,
+				   struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct gh2dpk *gh2dpk = to_gh2dpk(sd);
@@ -688,7 +689,7 @@ static int gh2dpk_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct gh2dpk *gh2dpk = to_gh2dpk(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_get_try_format(sd, fh->state, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct gh2dpk_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&gh2dpk->mutex);
@@ -741,7 +742,6 @@ static const struct v4l2_subdev_core_ops gh2dpk_core_ops = {
 
 static const struct v4l2_subdev_video_ops gh2dpk_video_ops = {
 	.s_stream = gh2dpk_s_stream,
-	.g_frame_interval = gh2dpk_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops gh2dpk_pad_ops = {
@@ -749,6 +749,7 @@ static const struct v4l2_subdev_pad_ops gh2dpk_pad_ops = {
 	.enum_frame_size = gh2dpk_enum_frame_sizes,
 	.enum_frame_interval = gh2dpk_enum_frame_interval,
 	.get_fmt = gh2dpk_get_fmt,
+	.get_frame_interval = gh2dpk_g_frame_interval,
 	.set_fmt = gh2dpk_set_fmt,
 	.get_mbus_config = gh2dpk_g_mbus_config,
 };
@@ -872,8 +873,7 @@ static void find_terminal_resolution(struct gh2dpk *gh2dpk)
 		gh2dpk->cur_mode = &supported_modes[0];
 }
 
-static int gh2dpk_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int gh2dpk_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

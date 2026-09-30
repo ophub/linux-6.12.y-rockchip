@@ -322,7 +322,7 @@ static int adv7181_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 
 	mutex_lock(&adv7181->mutex);
 
-	try_fmt = v4l2_subdev_get_try_format(sd, fh->state, 0);
+	try_fmt = v4l2_subdev_state_get_format(fh->state, 0);
 	/* Initialize try_fmt */
 	adv7181_fill_fmt(&supported_modes[0], try_fmt);
 
@@ -415,8 +415,7 @@ static int adv7181_configure_regulators(struct adv7181 *adv7181)
 				       adv7181->supplies);
 }
 
-static int adv7181_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int adv7181_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct adv7181 *adv7181;

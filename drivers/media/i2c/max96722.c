@@ -1187,6 +1187,7 @@ static int max96722_enum_frame_sizes(struct v4l2_subdev *sd,
 }
 
 static int max96722_g_frame_interval(struct v4l2_subdev *sd,
+				     struct v4l2_subdev_state *sd_state,
 				     struct v4l2_subdev_frame_interval *fi)
 {
 	struct max96722 *max96722 = v4l2_get_subdevdata(sd);
@@ -1752,7 +1753,6 @@ static const struct v4l2_subdev_core_ops max96722_core_ops = {
 
 static const struct v4l2_subdev_video_ops max96722_video_ops = {
 	.s_stream = max96722_s_stream,
-	.g_frame_interval = max96722_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops max96722_pad_ops = {
@@ -1760,6 +1760,7 @@ static const struct v4l2_subdev_pad_ops max96722_pad_ops = {
 	.enum_frame_size = max96722_enum_frame_sizes,
 	.enum_frame_interval = max96722_enum_frame_interval,
 	.get_fmt = max96722_get_fmt,
+	.get_frame_interval = max96722_g_frame_interval,
 	.set_fmt = max96722_set_fmt,
 	.get_selection = max96722_get_selection,
 	.get_mbus_config = max96722_g_mbus_config,

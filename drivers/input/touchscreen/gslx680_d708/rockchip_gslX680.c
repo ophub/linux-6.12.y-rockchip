@@ -1207,8 +1207,7 @@ void judge_chip_type(struct i2c_client *client)
 		is_noid_version = 0;
 	}
 }
-static int  gsl_ts_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int  gsl_ts_probe(struct i2c_client *client)
 {
 	struct gsl_ts *ts;
 	int rc;

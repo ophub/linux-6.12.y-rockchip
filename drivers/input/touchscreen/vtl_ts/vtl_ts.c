@@ -640,7 +640,7 @@ ERR_TS_CONFIG:
 
 
 
-int vtl_ts_probe(struct i2c_client *client, const struct i2c_device_id *id)
+int vtl_ts_probe(struct i2c_client *client)
 {
 	int err = -1;
 	struct ts_info *ts;

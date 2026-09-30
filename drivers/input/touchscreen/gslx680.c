@@ -1721,8 +1721,7 @@ static const struct of_device_id gsl_ts_ids[] = {
 	{}
 };
 
-static int gsl_ts_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int gsl_ts_probe(struct i2c_client *client)
 {
 	const struct of_device_id *match;
 	struct gsl_ts *ts;

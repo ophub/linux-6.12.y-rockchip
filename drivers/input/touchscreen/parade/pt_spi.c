@@ -345,7 +345,7 @@ static int pt_spi_probe(struct spi_device *spi)
  * PARAMETERS:
  *      *spi - pointer to spi device structure
  ******************************************************************************/
-static int pt_spi_remove(struct spi_device *spi)
+static void pt_spi_remove(struct spi_device *spi)
 {
 #ifdef CONFIG_TOUCHSCREEN_PARADE_DEVICETREE_SUPPORT
 	const struct of_device_id *match;
@@ -364,8 +364,6 @@ static int pt_spi_remove(struct spi_device *spi)
 	if (match)
 		pt_devtree_clean_pdata(dev);
 #endif
-
-	return 0;
 }
 
 static const struct spi_device_id pt_spi_id[] = {

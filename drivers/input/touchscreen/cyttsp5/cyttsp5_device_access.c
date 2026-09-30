@@ -33,6 +33,7 @@
 #include <linux/timer.h>
 #include <linux/timex.h>
 #include <linux/rtc.h>
+#include <linux/timekeeping.h>
 
 #define CY_CMCP_THRESHOLD_FILE_NAME "cyttsp5_thresholdfile.csv"
 #define CMCP_THRESHOLD_FILE_NAME "ttdl_cmcp_thresholdfile.csv"
@@ -1869,12 +1870,11 @@ static int prepare_print_data(char *out_buf, int32_t *in_buf, int index, int dat
 
 static int save_header(char *out_buf, int index, struct result *result)
 {
-	struct timex txc;
 	struct rtc_time tm;
 	char time_buf[100] = {0};
 
-	do_gettimeofday(&(txc.time));
-	rtc_time_to_tm(txc.time.tv_sec, &tm);
+	/* do_gettimeofday()/rtc_time_to_tm() are gone in 6.12 */
+	rtc_time64_to_tm(ktime_get_real_seconds(), &tm);
 	scnprintf(time_buf, 100, "%d/%d/%d,TIME,%d:%d:%d,", tm.tm_year+1900,
 		 tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
@@ -4932,14 +4932,14 @@ static void cyttsp5_parse_cmcp_threshold_builtin(
 		__func__);
 
 	/* Open threshold file */
-	retval = request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
+	retval = request_firmware_nowait(THIS_MODULE, true,
 			CMCP_THRESHOLD_FILE_NAME, dev, GFP_KERNEL, dev,
 			cyttsp5_cmcp_parse_threshold_file);
 	if (retval < 0) {
 		dev_err(dev, "%s: Failed loading cmcp threshold file, attempting legacy file\n",
 			__func__);
 		/* Try legacy file name */
-		retval = request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
+		retval = request_firmware_nowait(THIS_MODULE, true,
 				CY_CMCP_THRESHOLD_FILE_NAME, dev, GFP_KERNEL,
 				dev, cyttsp5_cmcp_parse_threshold_file);
 		if (retval < 0) {

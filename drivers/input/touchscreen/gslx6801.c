@@ -1513,8 +1513,7 @@ static void gsl_ts_power_on(struct gsl_ts *ts, bool enable)
 	}
 }
 
-static int gsl_ts_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int gsl_ts_probe(struct i2c_client *client)
 {
 	struct gsl_ts *ts;
 	int rc;

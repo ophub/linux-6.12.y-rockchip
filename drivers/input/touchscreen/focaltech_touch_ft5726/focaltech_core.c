@@ -1510,7 +1510,11 @@ static void fts_resume_work(struct work_struct *work)
 }
 
 #if defined(CONFIG_FB)
-static int fb_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
+/*
+ * Renamed from fb_notifier_callback(): ../tp_suspend.h already provides a
+ * static inline with that name, which clashes in the same translation unit.
+ */
+static int fts_fb_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
 {
 	struct fb_event *evdata = data;
 	int *blank = NULL;
@@ -1815,7 +1819,7 @@ static int fts_ts_probe_entry(struct fts_ts_data *ts_data)
 #endif
 
 #if defined(CONFIG_FB)
-	ts_data->fb_notif.notifier_call = fb_notifier_callback;
+	ts_data->fb_notif.notifier_call = fts_fb_notifier_callback;
 	ret = fb_register_client(&ts_data->fb_notif);
 	if (ret)
 		FTS_ERROR("[FB]Unable to register fb_notifier: %d", ret);

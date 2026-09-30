@@ -214,7 +214,7 @@ static const struct of_device_id of_cy8ctouch_dt_ids[] = {
 MODULE_DEVICE_TABLE(of, of_cy8ctouch_dt_ids);
 
 static int
-cy8ctouch_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
+cy8ctouch_i2c_probe(struct i2c_client *client)
 {
 	const struct of_device_id *of_dev_id;
 	struct device *dev = &client->dev;

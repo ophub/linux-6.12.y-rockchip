@@ -1217,8 +1217,14 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
     }
 
     /* reset, irq gpio info */
-    pdata->reset_gpio = of_get_named_gpio_flags(np, "focaltech,reset-gpio", 0, &pdata->reset_gpio_flags);
-    pdata->irq_gpio = of_get_named_gpio_flags(np, "focaltech,irq-gpio", 0, &pdata->irq_gpio_flags);
+    pdata->reset_gpio = of_get_named_gpio(np, "focaltech,reset-gpio", 0);
+    pdata->irq_gpio = of_get_named_gpio(np, "focaltech,irq-gpio", 0);
+    /*
+     * of_get_named_gpio_flags() is gone in 6.12. Keep irq_gpio_flags at 0 so
+     * fts_irq_registration() falls back to its own default
+     * (IRQF_TRIGGER_FALLING): no behaviour change.
+     */
+    pdata->irq_gpio_flags = 0;
 
     ret = of_property_read_u32(np, "focaltech,max-touch-number", &temp_val);
     if (0 == ret) {

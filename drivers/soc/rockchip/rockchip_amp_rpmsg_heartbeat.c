@@ -18,7 +18,7 @@
 #define HEARTBEAT_DEVICE_NAME	"rpmsg_heartbeat"
 #define HEART_RATE		(3 * HZ)
 
-extern struct class *rpmsg_class;
+extern const struct class rpmsg_class;
 
 struct rpmsg_heartbeat {
 	struct rpmsg_device *rpdev;
@@ -152,13 +152,7 @@ static int rpmsg_heartbeat_probe(struct rpmsg_device *rpdev)
 		goto err_cdev;
 	}
 
-	if (!rpmsg_class) {
-		dev_err(&rpdev->dev, "rpmsg_class not available\n");
-		ret = -ENODEV;
-		goto err_device;
-	}
-
-	chip->device = device_create(rpmsg_class, NULL,
+	chip->device = device_create(&rpmsg_class, NULL,
 				     chip->devno, NULL,
 				     "heartbeat");
 	if (IS_ERR(chip->device)) {
@@ -204,7 +198,7 @@ static void rpmsg_heartbeat_remove(struct rpmsg_device *rpdev)
 	del_timer_sync(&chip->rpmsg_heartbeat_timer);
 
 	if (chip->device) {
-		device_destroy(rpmsg_class, chip->devno);
+		device_destroy(&rpmsg_class, chip->devno);
 		chip->device = NULL;
 	}
 

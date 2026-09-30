@@ -219,7 +219,7 @@ static void rpmsg_sharedmem_node_free(struct rpmsg_sharedmem_device *rsm_dev,
 /*************************** SHAREMEM EXPORT *********************************/
 struct device *rkamp_sharedmem_get_device(const char *name)
 {
-	return class_find_device_by_name(rpmsg_class, name);
+	return class_find_device_by_name(&rpmsg_class, name);
 }
 EXPORT_SYMBOL(rkamp_sharedmem_get_device);
 
@@ -430,7 +430,7 @@ static int rpmsg_sharedmem_probe(struct rpmsg_device *rdev)
 		      (unsigned long long)rsm_dev->sm->rmem->size);
 
 	rsm_dev->chrdev.parent = dev;
-	rsm_dev->chrdev.class = rpmsg_class;
+	rsm_dev->chrdev.class = &rpmsg_class;
 	dev_set_name(&rsm_dev->chrdev, "%s", rdev->id.name);
 	ret = device_register(&rsm_dev->chrdev);
 	if (ret) {
@@ -631,11 +631,11 @@ static int rkamp_sharedmem_probe(struct platform_device *pdev)
 	return ret;
 }
 
-static int rkamp_sharedmem_remove(struct platform_device *pdev)
+static void rkamp_sharedmem_remove(struct platform_device *pdev)
 {
-	unregister_rpmsg_driver(platform_get_drvdata(pdev));
+	struct rkamp_sharedmem_device *rksm_dev = platform_get_drvdata(pdev);
 
-	return 0;
+	unregister_rpmsg_driver(rksm_dev->rpmsg_sd);
 }
 
 static const struct of_device_id rkamp_sharedmem_dt_match[] = {

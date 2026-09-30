@@ -165,23 +165,9 @@ static void rd_submit_bio(struct bio *bio)
 	bio_endio(bio);
 }
 
-static int rd_rw_page(struct block_device *bdev, sector_t sector,
-		      struct page *page, enum req_op op)
-{
-	struct rd_device *rd = bdev->bd_disk->private_data;
-	int err;
-
-	if (PageTransHuge(page))
-		return -ENOTSUPP;
-	err = rd_do_bvec(rd, page, PAGE_SIZE, 0, op, sector);
-	page_endio(page, op_is_write(op), err);
-	return err;
-}
-
 static const struct block_device_operations rd_fops = {
 	.owner =	THIS_MODULE,
 	.submit_bio =	rd_submit_bio,
-	.rw_page =	rd_rw_page,
 };
 
 static long rd_dax_direct_access(struct dax_device *dax_dev, pgoff_t pgoff,
@@ -229,12 +215,28 @@ static const struct dax_operations rd_dax_ops = {
 
 static int rd_init(struct rd_device *rd, int major, int minor)
 {
+	struct queue_limits lim = {
+		/*
+		 * This is so fdisk will align partitions on 4k, because of
+		 * direct_access API needing 4k alignment, returning a PFN
+		 * (This is only a problem on very small devices <= 4M,
+		 *  otherwise fdisk will align on 1M. Regardless this call
+		 *  is harmless)
+		 */
+		.physical_block_size	= PAGE_SIZE,
+		/*
+		 * Tell the block layer that this is not a rotational device,
+		 * that it does not contribute to the random pool, that it
+		 * supports REQ_NOWAIT and that it is a DAX capable device.
+		 */
+		.features		= BLK_FEAT_NOWAIT | BLK_FEAT_DAX,
+	};
 	struct gendisk *disk;
 	int err;
 
-	disk = blk_alloc_disk(NUMA_NO_NODE);
-	if (!disk)
-		return -ENOMEM;
+	disk = blk_alloc_disk(&lim, NUMA_NO_NODE);
+	if (IS_ERR(disk))
+		return PTR_ERR(disk);
 
 	disk->major		= major;
 	disk->first_minor	= 0;
@@ -259,21 +261,6 @@ static int rd_init(struct rd_device *rd, int major, int minor)
 	if (err)
 		goto out_cleanup_dax;
 
-	/*
-	 * This is so fdisk will align partitions on 4k, because of
-	 * direct_access API needing 4k alignment, returning a PFN
-	 * (This is only a problem on very small devices <= 4M,
-	 *  otherwise fdisk will align on 1M. Regardless this call
-	 *  is harmless)
-	 */
-	blk_queue_physical_block_size(disk->queue, PAGE_SIZE);
-
-	/* Tell the block layer that this is not a rotational device */
-	blk_queue_flag_set(QUEUE_FLAG_NONROT, disk->queue);
-	blk_queue_flag_clear(QUEUE_FLAG_ADD_RANDOM, disk->queue);
-	blk_queue_flag_set(QUEUE_FLAG_NOWAIT, disk->queue);
-	if (rd->dax_dev)
-		blk_queue_flag_set(QUEUE_FLAG_DAX, disk->queue);
 	err = add_disk(disk);
 	if (err)
 		goto out_remove_dax_host;

@@ -528,7 +528,7 @@ static int ov9750_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&ov9750->mutex);
 		return -ENOTTY;
@@ -559,7 +559,7 @@ static int ov9750_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&ov9750->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&ov9750->mutex);
 		return -ENOTTY;
@@ -902,7 +902,7 @@ static int ov9750_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct ov9750 *ov9750 = to_ov9750(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_get_try_format(sd, fh->state, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct ov9750_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&ov9750->mutex);
@@ -1141,8 +1141,7 @@ static int ov9750_configure_regulators(struct ov9750 *ov9750)
 				       ov9750->supplies);
 }
 
-static int ov9750_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ov9750_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

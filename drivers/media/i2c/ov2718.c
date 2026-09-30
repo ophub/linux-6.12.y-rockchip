@@ -113,7 +113,6 @@
 struct ov2718_gpio {
 	int pltfrm_gpio;
 	const char *label;
-	enum of_gpio_flags active_low;
 };
 
 static const char * const ov2718_supply_names[] = {

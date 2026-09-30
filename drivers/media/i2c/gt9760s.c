@@ -716,8 +716,7 @@ static int gt9760s_read_dts(struct i2c_client *client, struct gt9760s_device *de
 	return ret;
 }
 
-static int gt9760s_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int gt9760s_probe(struct i2c_client *client)
 {
 	struct gt9760s_device *dev_vcm;
 	struct v4l2_subdev *sd;

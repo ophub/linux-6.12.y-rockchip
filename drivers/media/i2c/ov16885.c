@@ -1177,6 +1177,7 @@ static int ov16885_enable_test_pattern(struct ov16885 *ov16885, u32 pattern)
 }
 
 static int ov16885_g_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct ov16885 *ov16885 = to_ov16885(sd);
@@ -1673,7 +1674,6 @@ static const struct v4l2_subdev_core_ops ov16885_core_ops = {
 
 static const struct v4l2_subdev_video_ops ov16885_video_ops = {
 	.s_stream = ov16885_s_stream,
-	.g_frame_interval = ov16885_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops ov16885_pad_ops = {
@@ -1681,6 +1681,7 @@ static const struct v4l2_subdev_pad_ops ov16885_pad_ops = {
 	.enum_frame_size = ov16885_enum_frame_sizes,
 	.enum_frame_interval = ov16885_enum_frame_interval,
 	.get_fmt = ov16885_get_fmt,
+	.get_frame_interval = ov16885_g_frame_interval,
 	.set_fmt = ov16885_set_fmt,
 	.get_selection = ov16885_get_selection,
 	.get_mbus_config = ov16885_g_mbus_config,

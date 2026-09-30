@@ -1230,14 +1230,28 @@ sc850sl_find_best_fit(struct sc850sl *sc850sl, struct v4l2_subdev_format *fmt)
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(supported_modes); i++) {
+		u64 fps_i, fps_b;
+
 		dist = sc850sl_get_reso_dist(&supported_modes[i], framefmt);
 		if (cur_best_fit_dist == -1 || dist < cur_best_fit_dist) {
 			cur_best_fit_dist = dist;
 			cur_best_fit = i;
 		} else if (dist == cur_best_fit_dist &&
 			   framefmt->code == supported_modes[i].bus_fmt) {
-			cur_best_fit = i;
-			break;
+			/*
+			 * Several modes can share the same resolution/code
+			 * (mode[0] 4K@40 vs mode[1] 4K@30). Prefer the
+			 * highest-fps one so a bare 3840x2160 set_fmt lands on
+			 * 40fps(mode[0]) instead of the later 30fps(mode[1]).
+			 * An explicit 30fps request still selects mode[1] via
+			 * s_frame_interval / RKCIS_CMD_SELECT_SETTING.
+			 */
+			fps_i = DIV_ROUND_CLOSEST((u64)supported_modes[i].max_fps.denominator,
+						  supported_modes[i].max_fps.numerator);
+			fps_b = DIV_ROUND_CLOSEST((u64)supported_modes[cur_best_fit].max_fps.denominator,
+						  supported_modes[cur_best_fit].max_fps.numerator);
+			if (fps_i > fps_b)
+				cur_best_fit = i;
 		}
 	}
 	dev_info(&sc850sl->client->dev, "%s: cur_best_fit(%d)",
@@ -1286,6 +1300,7 @@ static int sc850sl_set_fmt(struct v4l2_subdev *sd,
 		__v4l2_ctrl_modify_range(sc850sl->vblank, vblank_def,
 					 SC850SL_VTS_MAX - mode->height,
 					 1, vblank_def);
+		__v4l2_ctrl_s_ctrl(sc850sl->vblank, vblank_def);
 		__v4l2_ctrl_s_ctrl(sc850sl->link_freq, mode->mipi_freq_idx);
 		pixel_rate = (u32)link_freq_items[mode->mipi_freq_idx] /
 			     mode->bpp * 2 * SC850SL_4LANES;
@@ -1451,6 +1466,7 @@ static int sc850sl_s_frame_interval(struct v4l2_subdev *sd,
 	__v4l2_ctrl_modify_range(sc850sl->vblank, vblank_def,
 				 SC850SL_VTS_MAX - mode->height,
 				 1, vblank_def);
+	__v4l2_ctrl_s_ctrl(sc850sl->vblank, vblank_def);
 	__v4l2_ctrl_s_ctrl(sc850sl->link_freq, mode->mipi_freq_idx);
 	pixel_rate = (u32)link_freq_items[mode->mipi_freq_idx] /
 		     mode->bpp * 2 * SC850SL_4LANES;
@@ -1705,12 +1721,80 @@ static int sc850sl_get_channel_info(struct sc850sl *sc850sl, struct rkmodule_cha
 	return 0;
 }
 
+static int sc850sl_set_setting(struct sc850sl *sc850sl, struct rk_sensor_setting *setting)
+{
+	int i = 0;
+	int cur_fps = 0;
+	s64 h_blank, vblank_def;
+	u64 pixel_rate = 0;
+	const struct sc850sl_mode *mode = NULL;
+	const struct sc850sl_mode *match = NULL;
+
+	dev_info(&sc850sl->client->dev,
+		 "sensor setting: %d x %d, fps:%d fmt:%d, mode:%d\n",
+		 setting->width, setting->height,
+		 setting->fps, setting->fmt, setting->mode);
+
+	for (i = 0; i < sc850sl->cfg_num; i++) {
+		mode = &supported_modes[i];
+		if (mode->width == setting->width &&
+		    mode->height == setting->height &&
+		    mode->hdr_mode == setting->mode &&
+		    mode->bus_fmt == setting->fmt) {
+			cur_fps = DIV_ROUND_CLOSEST(mode->max_fps.denominator,
+						    mode->max_fps.numerator);
+			if (cur_fps == setting->fps) {
+				match = mode;
+				break;
+			}
+		}
+	}
+
+	if (!match) {
+		dev_err(&sc850sl->client->dev,
+			"couldn't match the support modes %dx%d@%d\n",
+			setting->width, setting->height, setting->fps);
+		return -EINVAL;
+	}
+
+	dev_info(&sc850sl->client->dev,
+		 "-----%s: match the support mode, mode idx:%d-----\n",
+		 __func__, i);
+
+	sc850sl->cur_mode = match;
+	mode = sc850sl->cur_mode;
+
+	h_blank = mode->hts_def - mode->width;
+	__v4l2_ctrl_modify_range(sc850sl->hblank, h_blank, h_blank, 1, h_blank);
+	vblank_def = mode->vts_def - mode->height;
+	__v4l2_ctrl_modify_range(sc850sl->vblank, vblank_def,
+				 SC850SL_VTS_MAX - mode->height,
+				 1, vblank_def);
+	__v4l2_ctrl_s_ctrl(sc850sl->vblank, vblank_def);
+
+	__v4l2_ctrl_s_ctrl(sc850sl->link_freq, mode->mipi_freq_idx);
+	pixel_rate = (u32)link_freq_items[mode->mipi_freq_idx] /
+		     mode->bpp * 2 * SC850SL_4LANES;
+	__v4l2_ctrl_s_ctrl_int64(sc850sl->pixel_rate, pixel_rate);
+
+	sc850sl->cur_fps = mode->max_fps;
+	sc850sl->cur_vts = mode->vts_def;
+
+	dev_info(&sc850sl->client->dev,
+		 "hts_def:%d cur_vts:%d cur_fps:%d\n",
+		 mode->hts_def, mode->vts_def,
+		 sc850sl->cur_fps.denominator / sc850sl->cur_fps.numerator);
+
+	return 0;
+}
+
 static long sc850sl_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 {
 	struct sc850sl *sc850sl = to_sc850sl(sd);
 	struct rkmodule_hdr_cfg *hdr_cfg;
 	const struct sc850sl_mode *mode;
 	struct rkmodule_channel_info *ch_info;
+	struct rk_sensor_setting *setting;
 	long ret = 0;
 	u64 pixel_rate = 0;
 	u32 i, h, w, stream;
@@ -1824,6 +1908,11 @@ static long sc850sl_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 		ret = sc850sl_get_channel_info(sc850sl, ch_info);
 		break;
 
+	case RKCIS_CMD_SELECT_SETTING:
+		setting = (struct rk_sensor_setting *)arg;
+		ret = sc850sl_set_setting(sc850sl, setting);
+		break;
+
 	default:
 		ret = -ENOIOCTLCMD;
 		break;
@@ -1846,6 +1935,7 @@ static long sc850sl_compat_ioctl32(struct v4l2_subdev *sd,
 	u32  stream;
 	u32 brl = 0;
 	struct rkmodule_csi_dphy_param *dphy_param;
+	struct rk_sensor_setting *setting;
 
 	switch (cmd) {
 	case RKMODULE_GET_MODULE_INFO:
@@ -1964,6 +2054,20 @@ static long sc850sl_compat_ioctl32(struct v4l2_subdev *sd,
 		}
 		kfree(dphy_param);
 		break;
+	case RKCIS_CMD_SELECT_SETTING:
+		setting = kzalloc(sizeof(*setting), GFP_KERNEL);
+		if (!setting) {
+			ret = -ENOMEM;
+			return ret;
+		}
+
+		if (copy_from_user(setting, up, sizeof(*setting))) {
+			kfree(setting);
+			return -EFAULT;
+		}
+		ret = sc850sl_ioctl(sd, cmd, setting);
+		kfree(setting);
+		break;
 
 	default:
 		ret = -ENOIOCTLCMD;
@@ -1991,6 +2095,17 @@ static int __sc850sl_start_stream(struct sc850sl *sc850sl)
 		ret = sc850sl_write_array(sc850sl->client, sc850sl->cur_mode->reg_list);
 		if (ret)
 			return ret;
+
+		/*
+		 * Reset VTS(vblank) to the mode default at every stream start.
+		 * A stale VTS left behind by a previous session (e.g. rkaiq AE
+		 * long-exposure) otherwise survives in the v4l2 ctrl and is
+		 * written back here by __v4l2_ctrl_handler_setup(), throttling
+		 * the sensor even with 3A stopped. AE may re-raise it later
+		 * only if the scene really needs a longer exposure.
+		 */
+		__v4l2_ctrl_s_ctrl(sc850sl->vblank,
+				  sc850sl->cur_mode->vts_def - sc850sl->cur_mode->height);
 
 		ret = __v4l2_ctrl_handler_setup(&sc850sl->ctrl_handler);
 		if (ret)
@@ -2391,8 +2506,14 @@ static void sc850sl_modify_fps_info(struct sc850sl *sc850sl)
 {
 	const struct sc850sl_mode *mode = sc850sl->cur_mode;
 
-	sc850sl->cur_fps.denominator = mode->max_fps.denominator * sc850sl->cur_vts /
-				       mode->vts_def;
+	/*
+	 * fps is inversely proportional to VTS: raising VTS lowers the frame
+	 * rate. Match sc450ai semantics (den = max_den * vts_def / cur_vts);
+	 * the old direction reported an increasing fps while AE raised VTS,
+	 * feeding rkaiq/AE bogus feedback.
+	 */
+	sc850sl->cur_fps.denominator = mode->max_fps.denominator * mode->vts_def /
+				       sc850sl->cur_vts;
 }
 
 static int sc850sl_set_ctrl(struct v4l2_ctrl *ctrl)

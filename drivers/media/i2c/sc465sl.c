@@ -45,6 +45,7 @@
 #define SC465SL_BITS_PER_SAMPLE		10
 #define SC465SL_LINK_FREQ_371		371250000	/* 742.5Mbps pre lane*/
 #define SC465SL_LINK_FREQ_540		540000000	/* 1080Mbps pre lane*/
+#define SC465SL_MAX_LINK_FREQ		SC465SL_LINK_FREQ_540
 
 #define OF_CAMERA_HDR_MODE		"rockchip,camera-hdr-mode"
 
@@ -896,14 +897,14 @@ static const struct sc465sl_mode supported_modes_2lane[] = {
 			.denominator = 300000,
 		},
 		.exp_def = 0x05d4,
-		.hts_def = 0x640,
+		.hts_def = 0x640 * 4,
 		.vts_def = 0x05dc,
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
 		.global_reg_list = sc465sl_global_2lane_regs,
 		.reg_list = sc465sl_linear_10_2560x1440_30fps_2lane_regs,
 		.hdr_mode = NO_HDR,
 		.mclk = 27000000,
-		.link_freq_idx = 1,
+		.link_freq_idx = 0,
 		.bpp = 10,
 		.vc[PAD0] = 0,
 		.lanes = 2,
@@ -1247,7 +1248,7 @@ static int sc465sl_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&sc465sl->mutex);
 		return -ENOTTY;
@@ -1286,7 +1287,7 @@ static int sc465sl_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&sc465sl->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&sc465sl->mutex);
 		return -ENOTTY;
@@ -1356,6 +1357,7 @@ static int sc465sl_enable_test_pattern(struct sc465sl *sc465sl, u32 pattern)
 }
 
 static int sc465sl_g_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc465sl *sc465sl = to_sc465sl(sd);
@@ -1392,6 +1394,7 @@ static const struct sc465sl_mode *sc465sl_find_mode(struct sc465sl *sc465sl, int
 }
 
 static int sc465sl_s_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc465sl *sc465sl = to_sc465sl(sd);
@@ -1950,7 +1953,6 @@ static void __sc465sl_power_off(struct sc465sl *sc465sl)
 	if (!IS_ERR(sc465sl->pwdn_gpio))
 		gpiod_set_value_cansleep(sc465sl->pwdn_gpio, 0);
 
-	clk_disable_unprepare(sc465sl->xvclk);
 	if (!IS_ERR(sc465sl->reset_gpio))
 		gpiod_set_value_cansleep(sc465sl->reset_gpio, 0);
 	if (!IS_ERR_OR_NULL(sc465sl->pins_sleep)) {
@@ -2122,7 +2124,7 @@ static int sc465sl_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc465sl *sc465sl = to_sc465sl(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-		v4l2_subdev_get_try_format(sd, fh->state, 0);
+		v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc465sl_mode *def_mode = &sc465sl->supported_modes[0];
 
 	mutex_lock(&sc465sl->mutex);
@@ -2180,8 +2182,6 @@ static const struct v4l2_subdev_core_ops sc465sl_core_ops = {
 
 static const struct v4l2_subdev_video_ops sc465sl_video_ops = {
 	.s_stream = sc465sl_s_stream,
-	.g_frame_interval = sc465sl_g_frame_interval,
-	.s_frame_interval = sc465sl_s_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops sc465sl_pad_ops = {
@@ -2189,6 +2189,8 @@ static const struct v4l2_subdev_pad_ops sc465sl_pad_ops = {
 	.enum_frame_size = sc465sl_enum_frame_sizes,
 	.enum_frame_interval = sc465sl_enum_frame_interval,
 	.get_fmt = sc465sl_get_fmt,
+	.get_frame_interval = sc465sl_g_frame_interval,
+	.set_frame_interval = sc465sl_s_frame_interval,
 	.set_fmt = sc465sl_set_fmt,
 	.get_mbus_config = sc465sl_g_mbus_config,
 };
@@ -2329,7 +2331,7 @@ static int sc465sl_initialize_controls(struct sc465sl *sc465sl)
 	u32 h_blank;
 	int ret;
 	u64 dst_link_freq = 0;
-	u64 dst_pixel_rate = 0;
+	u64 dst_pixel_rate = 0, max_dst_pixel_rate = 0;
 	u8 lanes = sc465sl->bus_cfg.bus.mipi_csi2.num_data_lanes;
 
 	handler = &sc465sl->ctrl_handler;
@@ -2348,22 +2350,11 @@ static int sc465sl_initialize_controls(struct sc465sl *sc465sl)
 
 	dst_link_freq = mode->link_freq_idx;
 	/* pixel rate = link frequency * 2 * lanes / BITS_PER_SAMPLE */
+	max_dst_pixel_rate = SC465SL_MAX_LINK_FREQ / mode->bpp * 2 * lanes;
 	dst_pixel_rate = (u32)link_freq_menu_items[mode->link_freq_idx] /
 			 mode->bpp * 2 * lanes;
-	if (lanes == 2)
-		sc465sl->pixel_rate = v4l2_ctrl_new_std(handler, NULL, V4L2_CID_PIXEL_RATE,
-							0, PIXEL_RATE_WITH_371M_10BIT_2L,
-							1, dst_pixel_rate);
-	else if (lanes == 4) {
-		if (mode->hdr_mode == NO_HDR)
-			sc465sl->pixel_rate = v4l2_ctrl_new_std(handler, NULL, V4L2_CID_PIXEL_RATE,
-								0, PIXEL_RATE_WITH_540M_10BIT_4L,
-								1, dst_pixel_rate);
-		else if (mode->hdr_mode == HDR_X2)
-			sc465sl->pixel_rate = v4l2_ctrl_new_std(handler, NULL, V4L2_CID_PIXEL_RATE,
-								0, PIXEL_RATE_WITH_540M_10BIT_4L,
-								1, dst_pixel_rate);
-	}
+	sc465sl->pixel_rate = v4l2_ctrl_new_std(handler, NULL, V4L2_CID_PIXEL_RATE,
+						0, max_dst_pixel_rate, 1, dst_pixel_rate);
 
 	__v4l2_ctrl_s_ctrl(sc465sl->link_freq, dst_link_freq);
 
@@ -2569,8 +2560,7 @@ static int sc465sl_setup_clocks_and_gpios(struct sc465sl *sc465sl)
 	return 0;
 }
 
-static int sc465sl_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int sc465sl_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct sc465sl *sc465sl;

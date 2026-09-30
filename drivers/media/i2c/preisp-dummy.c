@@ -49,7 +49,6 @@
 struct pisp_dmy_gpio {
 	int pltfrm_gpio;
 	const char *label;
-	enum of_gpio_flags active_low;
 };
 
 struct pisp_dmy_regulator {

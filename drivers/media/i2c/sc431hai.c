@@ -780,7 +780,7 @@ static int sc431hai_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&sc431hai->mutex);
 		return -ENOTTY;
@@ -819,7 +819,7 @@ static int sc431hai_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&sc431hai->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&sc431hai->mutex);
 		return -ENOTTY;
@@ -887,6 +887,7 @@ static int sc431hai_enable_test_pattern(struct sc431hai *sc431hai, u32 pattern)
 }
 
 static int sc431hai_g_frame_interval(struct v4l2_subdev *sd,
+				     struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc431hai *sc431hai = to_sc431hai(sd);
@@ -924,6 +925,7 @@ static const struct sc431hai_mode *sc431hai_find_mode(struct sc431hai *sc431hai,
 }
 
 static int sc431hai_s_frame_interval(struct v4l2_subdev *sd,
+				     struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc431hai *sc431hai = to_sc431hai(sd);
@@ -1487,7 +1489,7 @@ static int sc431hai_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc431hai *sc431hai = to_sc431hai(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_get_try_format(sd, fh->state, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc431hai_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&sc431hai->mutex);
@@ -1543,8 +1545,6 @@ static const struct v4l2_subdev_core_ops sc431hai_core_ops = {
 
 static const struct v4l2_subdev_video_ops sc431hai_video_ops = {
 	.s_stream = sc431hai_s_stream,
-	.g_frame_interval = sc431hai_g_frame_interval,
-	.s_frame_interval = sc431hai_s_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops sc431hai_pad_ops = {
@@ -1552,6 +1552,8 @@ static const struct v4l2_subdev_pad_ops sc431hai_pad_ops = {
 	.enum_frame_size = sc431hai_enum_frame_sizes,
 	.enum_frame_interval = sc431hai_enum_frame_interval,
 	.get_fmt = sc431hai_get_fmt,
+	.get_frame_interval = sc431hai_g_frame_interval,
+	.set_frame_interval = sc431hai_s_frame_interval,
 	.set_fmt = sc431hai_set_fmt,
 	.get_mbus_config = sc431hai_g_mbus_config,
 };
@@ -1787,8 +1789,7 @@ static int sc431hai_configure_regulators(struct sc431hai *sc431hai)
 				       sc431hai->supplies);
 }
 
-static int sc431hai_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int sc431hai_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

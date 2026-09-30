@@ -1808,7 +1808,7 @@ static int sc485sl_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&sc485sl->mutex);
 		return -ENOTTY;
@@ -1847,7 +1847,7 @@ static int sc485sl_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&sc485sl->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&sc485sl->mutex);
 		return -ENOTTY;
@@ -1917,6 +1917,7 @@ static int sc485sl_enable_test_pattern(struct sc485sl *sc485sl, u32 pattern)
 }
 
 static int sc485sl_g_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc485sl *sc485sl = to_sc485sl(sd);
@@ -1953,6 +1954,7 @@ static const struct sc485sl_mode *sc485sl_find_mode(struct sc485sl *sc485sl, int
 }
 
 static int sc485sl_s_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc485sl *sc485sl = to_sc485sl(sd);
@@ -2652,7 +2654,7 @@ static int sc485sl_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc485sl *sc485sl = to_sc485sl(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-		v4l2_subdev_get_try_format(sd, fh->state, 0);
+		v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc485sl_mode *def_mode = &sc485sl->supported_modes[0];
 
 	mutex_lock(&sc485sl->mutex);
@@ -2710,8 +2712,6 @@ static const struct v4l2_subdev_core_ops sc485sl_core_ops = {
 
 static const struct v4l2_subdev_video_ops sc485sl_video_ops = {
 	.s_stream = sc485sl_s_stream,
-	.g_frame_interval = sc485sl_g_frame_interval,
-	.s_frame_interval = sc485sl_s_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops sc485sl_pad_ops = {
@@ -2719,6 +2719,8 @@ static const struct v4l2_subdev_pad_ops sc485sl_pad_ops = {
 	.enum_frame_size = sc485sl_enum_frame_sizes,
 	.enum_frame_interval = sc485sl_enum_frame_interval,
 	.get_fmt = sc485sl_get_fmt,
+	.get_frame_interval = sc485sl_g_frame_interval,
+	.set_frame_interval = sc485sl_s_frame_interval,
 	.set_fmt = sc485sl_set_fmt,
 	.get_mbus_config = sc485sl_g_mbus_config,
 };
@@ -3103,8 +3105,7 @@ static int sc485sl_setup_clocks_and_gpios(struct sc485sl *sc485sl)
 	return 0;
 }
 
-static int sc485sl_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int sc485sl_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct sc485sl *sc485sl;

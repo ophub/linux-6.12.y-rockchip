@@ -600,7 +600,7 @@ static const struct sc223a_mode supported_modes[] = {
 		.reg_list = sc223a_linear_10_1920x1080_30fps_regs,
 		.hdr_mode = NO_HDR,
 		.mode_id = SC223A_MIPI_MODE,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	},
 	[SC223A_DVP_1920X1080] = {
 		.width = 1920,
@@ -805,7 +805,7 @@ sc223a_find_best_fit(struct v4l2_subdev_format *fmt)
 }
 
 static int sc223a_set_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *state,
 			   struct v4l2_subdev_format *fmt)
 {
 	struct sc223a *sc223a = to_sc223a(sd);
@@ -821,7 +821,7 @@ static int sc223a_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_state_get_format(cfg, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&sc223a->mutex);
 		return -ENOTTY;
@@ -844,7 +844,7 @@ static int sc223a_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int sc223a_get_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *state,
 			   struct v4l2_subdev_format *fmt)
 {
 	struct sc223a *sc223a = to_sc223a(sd);
@@ -853,7 +853,7 @@ static int sc223a_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&sc223a->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_state_get_format(cfg, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(state, fmt->pad);
 #else
 		mutex_unlock(&sc223a->mutex);
 		return -ENOTTY;
@@ -875,7 +875,7 @@ static int sc223a_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int sc223a_enum_mbus_code(struct v4l2_subdev *sd,
-				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_state *state,
 				  struct v4l2_subdev_mbus_code_enum *code)
 {
 	struct sc223a *sc223a = to_sc223a(sd);
@@ -888,7 +888,7 @@ static int sc223a_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int sc223a_enum_frame_sizes(struct v4l2_subdev *sd,
-				    struct v4l2_subdev_pad_config *cfg,
+				    struct v4l2_subdev_state *state,
 				    struct v4l2_subdev_frame_size_enum *fse)
 {
 	if (fse->index >= ARRAY_SIZE(supported_modes))
@@ -938,30 +938,19 @@ static int sc223a_g_frame_interval(struct v4l2_subdev *sd,
 }
 
 static int sc223a_g_mbus_config(struct v4l2_subdev *sd,
-				unsigned int pad_id,
-				struct v4l2_mbus_config *config)
+				 unsigned int pad_id,
+				 struct v4l2_mbus_config *config)
 {
 	struct sc223a *sc223a = to_sc223a(sd);
-	const struct sc223a_mode *mode = sc223a->cur_mode;
 
-	u32 val;
-
-	if (!strcmp(sc223a->mode, CAMERA_MIPI_MODE)) {
-		val = 1 << (SC223A_LANES - 1) |
-		      V4L2_MBUS_CSI2_CHANNEL_0 |
-		      V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-		if (mode->hdr_mode != NO_HDR)
-			val |= V4L2_MBUS_CSI2_CHANNEL_1;
-		if (mode->hdr_mode == HDR_X3)
-			val |= V4L2_MBUS_CSI2_CHANNEL_2;
-
-		config->type = V4L2_MBUS_CSI2_DPHY;
-		config->flags = val;
-	} else if (!strcmp(sc223a->mode, CAMERA_DVP_MODE)) {
+	if (!strcmp(sc223a->mode, CAMERA_DVP_MODE)) {
 		config->type = V4L2_MBUS_PARALLEL;
-		config->flags = V4L2_MBUS_HSYNC_ACTIVE_HIGH |
-				V4L2_MBUS_VSYNC_ACTIVE_LOW |
-				V4L2_MBUS_PCLK_SAMPLE_RISING;
+		config->bus.parallel.flags = V4L2_MBUS_HSYNC_ACTIVE_HIGH |
+					     V4L2_MBUS_VSYNC_ACTIVE_LOW |
+					     V4L2_MBUS_PCLK_SAMPLE_RISING;
+	} else {
+		config->type = V4L2_MBUS_CSI2_DPHY;
+		config->bus.mipi_csi2.num_data_lanes = SC223A_LANES;
 	}
 
 	return 0;
@@ -1364,7 +1353,7 @@ static int sc223a_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc223a *sc223a = to_sc223a(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_state_get_format(fh->pad, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc223a_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&sc223a->mutex);
@@ -1382,7 +1371,7 @@ static int sc223a_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #endif
 
 static int sc223a_enum_frame_interval(struct v4l2_subdev *sd,
-				       struct v4l2_subdev_pad_config *cfg,
+				       struct v4l2_subdev_state *state,
 				       struct v4l2_subdev_frame_interval_enum *fie)
 {
 	if (fie->index >= ARRAY_SIZE(supported_modes))
@@ -1786,7 +1775,7 @@ static int sc223a_probe(struct i2c_client *client)
 	snprintf(sd->name, sizeof(sd->name), "m%02d_%s_%s %s",
 		 sc223a->module_index, facing,
 		 SC223A_NAME, dev_name(sd->dev));
-	ret = v4l2_async_register_subdev_sensor_common(sd);
+	ret = v4l2_async_register_subdev_sensor(sd);
 	if (ret) {
 		dev_err(dev, "v4l2 async register subdev failed\n");
 		goto err_clean_entity;
@@ -1815,7 +1804,7 @@ err_destroy_mutex:
 	return ret;
 }
 
-static int sc223a_remove(struct i2c_client *client)
+static void sc223a_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct sc223a *sc223a = to_sc223a(sd);
@@ -1832,7 +1821,6 @@ static int sc223a_remove(struct i2c_client *client)
 		__sc223a_power_off(sc223a);
 	pm_runtime_set_suspended(&client->dev);
 
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF)

@@ -792,7 +792,7 @@ static int imx900_set_fmt(struct v4l2_subdev *sd,
 		 fmt->format.width, fmt->format.height);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&imx900->mutex);
 		return -ENOTTY;
@@ -843,7 +843,7 @@ static int imx900_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&imx900->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&imx900->mutex);
 		return -ENOTTY;
@@ -898,6 +898,7 @@ static int imx900_enum_frame_sizes(struct v4l2_subdev *sd,
 }
 
 static int imx900_g_frame_interval(struct v4l2_subdev *sd,
+				   struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct imx900 *imx900 = to_imx900(sd);
@@ -1463,7 +1464,7 @@ static int imx900_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct imx900 *imx900 = to_imx900(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-	    v4l2_subdev_get_try_format(sd, fh->state, 0);
+	    v4l2_subdev_state_get_format(fh->state, 0);
 	const struct imx900_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&imx900->mutex);
@@ -1559,7 +1560,6 @@ static const struct v4l2_subdev_core_ops imx900_core_ops = {
 
 static const struct v4l2_subdev_video_ops imx900_video_ops = {
 	.s_stream = imx900_s_stream,
-	.g_frame_interval = imx900_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops imx900_pad_ops = {
@@ -1567,6 +1567,7 @@ static const struct v4l2_subdev_pad_ops imx900_pad_ops = {
 	.enum_frame_size = imx900_enum_frame_sizes,
 	.enum_frame_interval = imx900_enum_frame_interval,
 	.get_fmt = imx900_get_fmt,
+	.get_frame_interval = imx900_g_frame_interval,
 	.set_fmt = imx900_set_fmt,
 	.get_selection = imx900_get_selection,
 	.get_mbus_config = imx900_g_mbus_config,
@@ -1867,8 +1868,7 @@ static int imx900_configure_regulators(struct imx900 *imx900)
 				       IMX900_NUM_SUPPLIES, imx900->supplies);
 }
 
-static int imx900_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int imx900_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

@@ -412,7 +412,7 @@ static const struct mis2031_mode supported_modes[] = {
 		.bus_fmt = MEDIA_BUS_FMT_SGRBG10_1X10,
 		.reg_list = mis2031_linear_10_1920x1080_regs,
 		.hdr_mode = NO_HDR,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	}
 };
 
@@ -616,7 +616,7 @@ mis2031_find_best_fit(struct v4l2_subdev_format *fmt)
 }
 
 static int mis2031_set_fmt(struct v4l2_subdev *sd,
-				struct v4l2_subdev_pad_config *cfg,
+				struct v4l2_subdev_state *state,
 				struct v4l2_subdev_format *fmt)
 {
 	struct mis2031 *mis2031 = to_mis2031(sd);
@@ -632,7 +632,7 @@ static int mis2031_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_state_get_format(cfg, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&mis2031->mutex);
 		return -ENOTTY;
@@ -655,7 +655,7 @@ static int mis2031_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int mis2031_get_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *state,
 			   struct v4l2_subdev_format *fmt)
 {
 	struct mis2031 *mis2031 = to_mis2031(sd);
@@ -664,7 +664,7 @@ static int mis2031_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&mis2031->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_state_get_format(cfg, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(state, fmt->pad);
 #else
 		mutex_unlock(&mis2031->mutex);
 		return -ENOTTY;
@@ -686,7 +686,7 @@ static int mis2031_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int mis2031_enum_mbus_code(struct v4l2_subdev *sd,
-				struct v4l2_subdev_pad_config *cfg,
+				struct v4l2_subdev_state *state,
 				struct v4l2_subdev_mbus_code_enum *code)
 {
 	struct mis2031 *mis2031 = to_mis2031(sd);
@@ -699,7 +699,7 @@ static int mis2031_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int mis2031_enum_frame_sizes(struct v4l2_subdev *sd,
-					struct v4l2_subdev_pad_config *cfg,
+					struct v4l2_subdev_state *state,
 					struct v4l2_subdev_frame_size_enum *fse)
 {
 	if (fse->index >= ARRAY_SIZE(supported_modes))
@@ -734,6 +734,7 @@ static int mis2031_enable_test_pattern(struct mis2031 *mis2031, u32 pattern)
 }
 
 static int mis2031_g_frame_interval(struct v4l2_subdev *sd,
+					struct v4l2_subdev_state *sd_state,
 					struct v4l2_subdev_frame_interval *fi)
 {
 	struct mis2031 *mis2031 = to_mis2031(sd);
@@ -748,22 +749,11 @@ static int mis2031_g_frame_interval(struct v4l2_subdev *sd,
 }
 
 static int mis2031_g_mbus_config(struct v4l2_subdev *sd,
-				unsigned int pad_id,
-				struct v4l2_mbus_config *config)
+				 unsigned int pad_id,
+				 struct v4l2_mbus_config *config)
 {
-	struct mis2031 *mis2031 = to_mis2031(sd);
-	const struct mis2031_mode *mode = mis2031->cur_mode;
-	u32 val = 1 << (MIS2031_LANES - 1) |
-		V4L2_MBUS_CSI2_CHANNEL_0 |
-		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-
-	if (mode->hdr_mode != NO_HDR)
-		val |= V4L2_MBUS_CSI2_CHANNEL_1;
-	if (mode->hdr_mode == HDR_X3)
-		val |= V4L2_MBUS_CSI2_CHANNEL_2;
-
 	config->type = V4L2_MBUS_CSI2_DPHY;
-	config->flags = val;
+	config->bus.mipi_csi2.num_data_lanes = MIS2031_LANES;
 
 	return 0;
 }
@@ -1151,7 +1141,7 @@ static int mis2031_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct mis2031 *mis2031 = to_mis2031(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_state_get_format(fh->pad, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct mis2031_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&mis2031->mutex);
@@ -1169,7 +1159,7 @@ static int mis2031_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #endif
 
 static int mis2031_enum_frame_interval(struct v4l2_subdev *sd,
-						struct v4l2_subdev_pad_config *cfg,
+						struct v4l2_subdev_state *state,
 						struct v4l2_subdev_frame_interval_enum *fie)
 {
 	if (fie->index >= ARRAY_SIZE(supported_modes))
@@ -1204,7 +1194,6 @@ static const struct v4l2_subdev_core_ops mis2031_core_ops = {
 
 static const struct v4l2_subdev_video_ops mis2031_video_ops = {
 	.s_stream = mis2031_s_stream,
-	.g_frame_interval = mis2031_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops mis2031_pad_ops = {
@@ -1212,6 +1201,7 @@ static const struct v4l2_subdev_pad_ops mis2031_pad_ops = {
 	.enum_frame_size = mis2031_enum_frame_sizes,
 	.enum_frame_interval = mis2031_enum_frame_interval,
 	.get_fmt = mis2031_get_fmt,
+	.get_frame_interval = mis2031_g_frame_interval,
 	.set_fmt = mis2031_set_fmt,
 	.get_mbus_config = mis2031_g_mbus_config,
 };
@@ -1556,7 +1546,7 @@ static int mis2031_probe(struct i2c_client *client)
 	snprintf(sd->name, sizeof(sd->name), "m%02d_%s_%s %s",
 		 mis2031->module_index, facing,
 		 MIS2031_NAME, dev_name(sd->dev));
-	ret = v4l2_async_register_subdev_sensor_common(sd);
+	ret = v4l2_async_register_subdev_sensor(sd);
 	if (ret) {
 		dev_err(dev, "v4l2 async register subdev failed\n");
 		goto err_clean_entity;
@@ -1585,7 +1575,7 @@ err_destroy_mutex:
 	return ret;
 }
 
-static int mis2031_remove(struct i2c_client *client)
+static void mis2031_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct mis2031 *mis2031 = to_mis2031(sd);
@@ -1602,7 +1592,6 @@ static int mis2031_remove(struct i2c_client *client)
 		__mis2031_power_off(mis2031);
 	pm_runtime_set_suspended(&client->dev);
 
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF)

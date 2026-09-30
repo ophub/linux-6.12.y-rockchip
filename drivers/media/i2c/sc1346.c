@@ -281,7 +281,7 @@ static const struct sc1346_mode supported_modes[] = {
 		.bus_fmt = MEDIA_BUS_FMT_SBGGR10_1X10,
 		.reg_list = sc1346_linear_10_1280x720_regs,
 		.hdr_mode = NO_HDR,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	}
 };
 
@@ -472,7 +472,7 @@ sc1346_find_best_fit(struct v4l2_subdev_format *fmt)
 }
 
 static int sc1346_set_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *state,
 			   struct v4l2_subdev_format *fmt)
 {
 	struct sc1346 *sc1346 = to_sc1346(sd);
@@ -488,7 +488,7 @@ static int sc1346_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_state_get_format(cfg, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&sc1346->mutex);
 		return -ENOTTY;
@@ -511,7 +511,7 @@ static int sc1346_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int sc1346_get_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *state,
 			   struct v4l2_subdev_format *fmt)
 {
 	struct sc1346 *sc1346 = to_sc1346(sd);
@@ -520,7 +520,7 @@ static int sc1346_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&sc1346->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_state_get_format(cfg, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(state, fmt->pad);
 #else
 		mutex_unlock(&sc1346->mutex);
 		return -ENOTTY;
@@ -542,7 +542,7 @@ static int sc1346_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int sc1346_enum_mbus_code(struct v4l2_subdev *sd,
-				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_state *state,
 				  struct v4l2_subdev_mbus_code_enum *code)
 {
 	struct sc1346 *sc1346 = to_sc1346(sd);
@@ -555,7 +555,7 @@ static int sc1346_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int sc1346_enum_frame_sizes(struct v4l2_subdev *sd,
-				    struct v4l2_subdev_pad_config *cfg,
+				    struct v4l2_subdev_state *state,
 				    struct v4l2_subdev_frame_size_enum *fse)
 {
 	if (fse->index >= ARRAY_SIZE(supported_modes))
@@ -605,22 +605,11 @@ static int sc1346_g_frame_interval(struct v4l2_subdev *sd,
 }
 
 static int sc1346_g_mbus_config(struct v4l2_subdev *sd,
-				unsigned int pad_id,
-				struct v4l2_mbus_config *config)
+				 unsigned int pad_id,
+				 struct v4l2_mbus_config *config)
 {
-	struct sc1346 *sc1346 = to_sc1346(sd);
-	const struct sc1346_mode *mode = sc1346->cur_mode;
-	u32 val = 1 << (SC1346_LANES - 1) |
-		V4L2_MBUS_CSI2_CHANNEL_0 |
-		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-
-	if (mode->hdr_mode != NO_HDR)
-		val |= V4L2_MBUS_CSI2_CHANNEL_1;
-	if (mode->hdr_mode == HDR_X3)
-		val |= V4L2_MBUS_CSI2_CHANNEL_2;
-
 	config->type = V4L2_MBUS_CSI2_DPHY;
-	config->flags = val;
+	config->bus.mipi_csi2.num_data_lanes = SC1346_LANES;
 
 	return 0;
 }
@@ -1011,7 +1000,7 @@ static int sc1346_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc1346 *sc1346 = to_sc1346(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_state_get_format(fh->pad, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc1346_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&sc1346->mutex);
@@ -1029,7 +1018,7 @@ static int sc1346_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #endif
 
 static int sc1346_enum_frame_interval(struct v4l2_subdev *sd,
-				       struct v4l2_subdev_pad_config *cfg,
+				       struct v4l2_subdev_state *state,
 				       struct v4l2_subdev_frame_interval_enum *fie)
 {
 	if (fie->index >= ARRAY_SIZE(supported_modes))
@@ -1411,7 +1400,7 @@ static int sc1346_probe(struct i2c_client *client)
 	snprintf(sd->name, sizeof(sd->name), "m%02d_%s_%s %s",
 		 sc1346->module_index, facing,
 		 SC1346_NAME, dev_name(sd->dev));
-	ret = v4l2_async_register_subdev_sensor_common(sd);
+	ret = v4l2_async_register_subdev_sensor(sd);
 	if (ret) {
 		dev_err(dev, "v4l2 async register subdev failed\n");
 		goto err_clean_entity;
@@ -1440,7 +1429,7 @@ err_destroy_mutex:
 	return ret;
 }
 
-static int sc1346_remove(struct i2c_client *client)
+static void sc1346_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct sc1346 *sc1346 = to_sc1346(sd);
@@ -1457,7 +1446,6 @@ static int sc1346_remove(struct i2c_client *client)
 		__sc1346_power_off(sc1346);
 	pm_runtime_set_suspended(&client->dev);
 
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF)

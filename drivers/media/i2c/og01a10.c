@@ -424,7 +424,7 @@ static const struct og01a10_mode supported_modes[] = {
 		.vts_def = 0x0b10,
 		.reg_list = og01a10_global_regs,
 		.hdr_mode = NO_HDR,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	},
 };
 
@@ -549,7 +549,7 @@ static const struct og01a10_mode *
 }
 
 static int og01a10_set_fmt(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
+			  struct v4l2_subdev_state *state,
 			  struct v4l2_subdev_format *fmt)
 {
 	struct og01a10 *og01a10 = to_og01a10(sd);
@@ -567,7 +567,7 @@ static int og01a10_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_state_get_format(cfg, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&og01a10->mutex);
 		return -ENOTTY;
@@ -597,7 +597,7 @@ static int og01a10_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int og01a10_get_fmt(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
+			  struct v4l2_subdev_state *state,
 			  struct v4l2_subdev_format *fmt)
 {
 	struct og01a10 *og01a10 = to_og01a10(sd);
@@ -606,7 +606,7 @@ static int og01a10_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&og01a10->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_state_get_format(cfg, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(state, fmt->pad);
 #else
 		mutex_unlock(&og01a10->mutex);
 		return -ENOTTY;
@@ -627,7 +627,7 @@ static int og01a10_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int og01a10_enum_mbus_code(struct v4l2_subdev *sd,
-				 struct v4l2_subdev_pad_config *cfg,
+				 struct v4l2_subdev_state *state,
 				 struct v4l2_subdev_mbus_code_enum *code)
 {
 	if (code->index != 0)
@@ -638,7 +638,7 @@ static int og01a10_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int og01a10_enum_frame_sizes(struct v4l2_subdev *sd,
-				   struct v4l2_subdev_pad_config *cfg,
+				   struct v4l2_subdev_state *state,
 				   struct v4l2_subdev_frame_size_enum *fse)
 {
 	if (fse->index >= ARRAY_SIZE(supported_modes))
@@ -993,7 +993,7 @@ static int og01a10_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct og01a10 *og01a10 = to_og01a10(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_state_get_format(fh->pad, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct og01a10_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&og01a10->mutex);
@@ -1011,7 +1011,7 @@ static int og01a10_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #endif
 
 static int og01a10_enum_frame_interval(struct v4l2_subdev *sd,
-				      struct v4l2_subdev_pad_config *cfg,
+				      struct v4l2_subdev_state *state,
 				      struct v4l2_subdev_frame_interval_enum *fie)
 {
 	if (fie->index >= ARRAY_SIZE(supported_modes))
@@ -1027,16 +1027,12 @@ static int og01a10_enum_frame_interval(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int og01a10_g_mbus_config(struct v4l2_subdev *sd, unsigned int pad,
-				struct v4l2_mbus_config *config)
+static int og01a10_g_mbus_config(struct v4l2_subdev *sd,
+				 unsigned int pad_id,
+				 struct v4l2_mbus_config *config)
 {
-	u32 val = 0;
-
-	val = 1 << (OG01A10_LANES - 1) |
-	      V4L2_MBUS_CSI2_CHANNEL_0 |
-	      V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
 	config->type = V4L2_MBUS_CSI2_DPHY;
-	config->flags = val;
+	config->bus.mipi_csi2.num_data_lanes = OG01A10_LANES;
 
 	return 0;
 }
@@ -1350,7 +1346,7 @@ static int og01a10_probe(struct i2c_client *client)
 	snprintf(sd->name, sizeof(sd->name), "m%02d_%s_%s %s",
 		 og01a10->module_index, facing,
 		 OG01A10_NAME, dev_name(sd->dev));
-	ret = v4l2_async_register_subdev_sensor_common(sd);
+	ret = v4l2_async_register_subdev_sensor(sd);
 	if (ret) {
 		dev_err(dev, "v4l2 async register subdev failed\n");
 		goto err_clean_entity;
@@ -1376,7 +1372,7 @@ err_destroy_mutex:
 	return ret;
 }
 
-static int og01a10_remove(struct i2c_client *client)
+static void og01a10_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct og01a10 *og01a10 = to_og01a10(sd);
@@ -1393,7 +1389,6 @@ static int og01a10_remove(struct i2c_client *client)
 		__og01a10_power_off(og01a10);
 	pm_runtime_set_suspended(&client->dev);
 
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF)

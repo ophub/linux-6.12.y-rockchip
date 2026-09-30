@@ -3943,7 +3943,7 @@ static const struct ar2020_mode supported_modes[] = {
 		.mipi_rate = MIPI_FREQ_860M / AR2020_BPP * 2 * AR2020_LANES,
 		.reg_mode = INITIAL_STREAMING,
 		.mclk = AR2020_XVCLK_FREQ_20M,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	},
 	{
 		.bus_fmt = MEDIA_BUS_FMT_SGRBG12_1X12,
@@ -3963,7 +3963,7 @@ static const struct ar2020_mode supported_modes[] = {
 		.mipi_rate = MIPI_FREQ_860M / AR2020_BPP * 2 * AR2020_LANES,
 		.mclk = AR2020_XVCLK_FREQ_27M,
 		.reg_mode = INITIAL_STREAMING,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	},
 	{
 		.bus_fmt = MEDIA_BUS_FMT_SRGGB10_1X10,
@@ -3983,7 +3983,7 @@ static const struct ar2020_mode supported_modes[] = {
 		.mipi_rate = MIPI_FREQ_600M / AR2020_BPP * 2 * AR2020_LANES,
 		.mclk = AR2020_XVCLK_FREQ_20M,
 		.reg_mode = INITIAL_STREAMING,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	},
 	{
 		.bus_fmt = MEDIA_BUS_FMT_SRGGB10_1X10,
@@ -4003,10 +4003,10 @@ static const struct ar2020_mode supported_modes[] = {
 		.mipi_rate = MIPI_FREQ_860M / AR2020_BPP * 2 * AR2020_LANES,
 		.mclk = AR2020_XVCLK_FREQ_27M,
 		.reg_mode = INITIAL_STREAMING,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
-		.vc[PAD1] = V4L2_MBUS_CSI2_CHANNEL_1,
-		.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
-		.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1,//M->csi wr0
+		.vc[PAD0] = 0,
+		.vc[PAD1] = 1,
+		.vc[PAD2] = 1,
+		.vc[PAD3] = 1,//M->csi wr0
 	},
 	{
 		.bus_fmt = MEDIA_BUS_FMT_SGRBG10_1X10,
@@ -4026,10 +4026,10 @@ static const struct ar2020_mode supported_modes[] = {
 		.mipi_rate = MIPI_FREQ_600M / AR2020_BPP * 2 * AR2020_LANES,
 		.mclk = AR2020_XVCLK_FREQ_20M,
 		.reg_mode = INITIAL_STREAMING,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
-		.vc[PAD1] = V4L2_MBUS_CSI2_CHANNEL_1,
-		.vc[PAD2] = V4L2_MBUS_CSI2_CHANNEL_1,
-		.vc[PAD3] = V4L2_MBUS_CSI2_CHANNEL_1,//M->csi wr0
+		.vc[PAD0] = 0,
+		.vc[PAD1] = 1,
+		.vc[PAD2] = 1,
+		.vc[PAD3] = 1,//M->csi wr0
 	},
 };
 
@@ -4196,7 +4196,7 @@ static int ar2020_set_rates(struct ar2020 *ar2020)
 }
 /* setup sensor work format to determine the MIPI speed, open.k */
 static int ar2020_set_fmt(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
+			  struct v4l2_subdev_state *state,
 			  struct v4l2_subdev_format *fmt)
 {
 	struct ar2020 *ar2020 = to_ar2020(sd);
@@ -4211,7 +4211,7 @@ static int ar2020_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_state_get_format(cfg, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&ar2020->mutex);
 		return -ENOTTY;
@@ -4231,7 +4231,7 @@ static int ar2020_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int ar2020_get_fmt(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
+			  struct v4l2_subdev_state *state,
 			  struct v4l2_subdev_format *fmt)
 {
 	struct ar2020 *ar2020 = to_ar2020(sd);
@@ -4240,7 +4240,7 @@ static int ar2020_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&ar2020->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_state_get_format(cfg, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(state, fmt->pad);
 #else
 		mutex_unlock(&ar2020->mutex);
 		return -ENOTTY;
@@ -4261,7 +4261,7 @@ static int ar2020_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int ar2020_enum_mbus_code(struct v4l2_subdev *sd,
-				 struct v4l2_subdev_pad_config *cfg,
+				 struct v4l2_subdev_state *state,
 				 struct v4l2_subdev_mbus_code_enum *code)
 {
 	struct ar2020 *ar2020 = to_ar2020(sd);
@@ -4274,7 +4274,7 @@ static int ar2020_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int ar2020_enum_frame_sizes(struct v4l2_subdev *sd,
-				   struct v4l2_subdev_pad_config *cfg,
+				   struct v4l2_subdev_state *state,
 				   struct v4l2_subdev_frame_size_enum *fse)
 {
 	struct ar2020 *ar2020 = to_ar2020(sd);
@@ -4314,23 +4314,12 @@ static int ar2020_g_frame_interval(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int ar2020_g_mbus_config(struct v4l2_subdev *sd, unsigned int pad_id,
-				struct v4l2_mbus_config *config)
+static int ar2020_g_mbus_config(struct v4l2_subdev *sd,
+				 unsigned int pad_id,
+				 struct v4l2_mbus_config *config)
 {
-	struct ar2020 *ar2020 = to_ar2020(sd);
-	const struct ar2020_mode *mode = ar2020->cur_mode;
-	u32 val = 0;
-
-	val = 1 << (AR2020_LANES - 1) |
-		V4L2_MBUS_CSI2_CHANNEL_0 |
-		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-	if (mode->hdr_mode != NO_HDR)
-		val |= V4L2_MBUS_CSI2_CHANNEL_1;
-	if (mode->hdr_mode == HDR_X3)
-		val |= V4L2_MBUS_CSI2_CHANNEL_2;
-
 	config->type = V4L2_MBUS_CSI2_DPHY;
-	config->flags = val;
+	config->bus.mipi_csi2.num_data_lanes = AR2020_LANES;
 
 	return 0;
 }
@@ -4896,7 +4885,7 @@ static int ar2020_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct ar2020 *ar2020 = to_ar2020(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_state_get_format(fh->pad, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct ar2020_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&ar2020->mutex);
@@ -4914,7 +4903,7 @@ static int ar2020_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #endif
 
 static int ar2020_enum_frame_interval(struct v4l2_subdev *sd,
-				       struct v4l2_subdev_pad_config *cfg,
+				       struct v4l2_subdev_state *state,
 				       struct v4l2_subdev_frame_interval_enum *fie)
 {
 	struct ar2020 *ar2020 = to_ar2020(sd);
@@ -5322,7 +5311,7 @@ static int ar2020_probe(struct i2c_client *client)
 	snprintf(sd->name, sizeof(sd->name), "m%02d_%s_%s %s",
 		 ar2020->module_index, facing,
 		 AR2020_NAME, dev_name(sd->dev));
-	ret = v4l2_async_register_subdev_sensor_common(sd);
+	ret = v4l2_async_register_subdev_sensor(sd);
 	if (ret) {
 		dev_err(dev, "v4l2 async register subdev failed\n");
 		goto err_clean_entity;
@@ -5348,7 +5337,7 @@ err_destroy_mutex:
 	return ret;
 }
 
-static int ar2020_remove(struct i2c_client *client)
+static void ar2020_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct ar2020 *ar2020 = to_ar2020(sd);
@@ -5365,7 +5354,6 @@ static int ar2020_remove(struct i2c_client *client)
 		__ar2020_power_off(ar2020);
 	pm_runtime_set_suspended(&client->dev);
 
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF)

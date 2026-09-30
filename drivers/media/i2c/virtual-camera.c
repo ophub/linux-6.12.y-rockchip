@@ -213,7 +213,7 @@ static int vcamera_get_fmt(struct v4l2_subdev *sd,
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
 		struct v4l2_mbus_framefmt *mf;
 
-		mf = v4l2_subdev_get_try_format(sd, sd_state, 0);
+		mf = v4l2_subdev_state_get_format(sd_state, 0);
 		mutex_lock(&vcam->mutex);
 		fmt->format = *mf;
 		mutex_unlock(&vcam->mutex);
@@ -253,7 +253,7 @@ static int vcamera_set_fmt(struct v4l2_subdev *sd,
 
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		mf = v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		mf = v4l2_subdev_state_get_format(sd_state, fmt->pad);
 		*mf = fmt->format;
 #else
 		mutex_unlock(&vcam->mutex);
@@ -340,7 +340,7 @@ static int vcamera_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 
 	mutex_lock(&vcam->mutex);
 
-	try_fmt = v4l2_subdev_get_try_format(sd, fh->state, 0);
+	try_fmt = v4l2_subdev_state_get_format(fh->state, 0);
 	/* Initialize try_fmt */
 	vcamera_fill_fmt(vcam, try_fmt);
 
@@ -511,8 +511,7 @@ done:
 	return 0;
 }
 
-static int vcamera_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int vcamera_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct virtual_camera *vcam;

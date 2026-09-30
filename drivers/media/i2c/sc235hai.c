@@ -905,7 +905,7 @@ static int sc235hai_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&sc235hai->mutex);
 		return -ENOTTY;
@@ -931,7 +931,7 @@ static int sc235hai_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&sc235hai->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&sc235hai->mutex);
 		return -ENOTTY;
@@ -999,6 +999,7 @@ static int sc235hai_enable_test_pattern(struct sc235hai *sc235hai, u32 pattern)
 }
 
 static int sc235hai_g_frame_interval(struct v4l2_subdev *sd,
+				     struct v4l2_subdev_state *sd_state,
 				     struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc235hai *sc235hai = to_sc235hai(sd);
@@ -1036,6 +1037,7 @@ static const struct sc235hai_mode *sc235hai_find_mode(struct sc235hai *sc235hai,
 }
 
 static int sc235hai_s_frame_interval(struct v4l2_subdev *sd,
+				     struct v4l2_subdev_state *sd_state,
 				     struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc235hai *sc235hai = to_sc235hai(sd);
@@ -1713,7 +1715,7 @@ static int sc235hai_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc235hai *sc235hai = to_sc235hai(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-		v4l2_subdev_get_try_format(sd, fh->state, 0);
+		v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc235hai_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&sc235hai->mutex);
@@ -1766,8 +1768,6 @@ static const struct v4l2_subdev_core_ops sc235hai_core_ops = {
 
 static const struct v4l2_subdev_video_ops sc235hai_video_ops = {
 	.s_stream = sc235hai_s_stream,
-	.g_frame_interval = sc235hai_g_frame_interval,
-	.s_frame_interval = sc235hai_s_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops sc235hai_pad_ops = {
@@ -1775,6 +1775,8 @@ static const struct v4l2_subdev_pad_ops sc235hai_pad_ops = {
 	.enum_frame_size = sc235hai_enum_frame_sizes,
 	.enum_frame_interval = sc235hai_enum_frame_interval,
 	.get_fmt = sc235hai_get_fmt,
+	.get_frame_interval = sc235hai_g_frame_interval,
+	.set_frame_interval = sc235hai_s_frame_interval,
 	.set_fmt = sc235hai_set_fmt,
 	.get_mbus_config = sc235hai_g_mbus_config,
 };
@@ -2012,8 +2014,7 @@ static int sc235hai_configure_regulators(struct sc235hai *sc235hai)
 				       sc235hai->supplies);
 }
 
-static int sc235hai_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int sc235hai_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

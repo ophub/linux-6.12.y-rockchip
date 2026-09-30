@@ -737,7 +737,7 @@ static int ov13b10_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&ov13b10->mutex);
 		return -ENOTTY;
@@ -768,7 +768,7 @@ static int ov13b10_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&ov13b10->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&ov13b10->mutex);
 		return -ENOTTY;
@@ -832,6 +832,7 @@ static int ov13b10_enable_test_pattern(struct ov13b10 *ov13b10, u32 pattern)
 }
 
 static int ov13b10_g_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct ov13b10 *ov13b10 = to_ov13b10(sd);
@@ -1335,7 +1336,7 @@ static int ov13b10_runtime_suspend(struct device *dev)
 static int ov13b10_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct ov13b10 *ov13b10 = to_ov13b10(sd);
-	struct v4l2_mbus_framefmt *try_fmt = v4l2_subdev_get_try_format(sd, fh->state, 0);
+	struct v4l2_mbus_framefmt *try_fmt = v4l2_subdev_state_get_format(fh->state, 0);
 	const struct ov13b10_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&ov13b10->mutex);
@@ -1427,7 +1428,6 @@ static const struct v4l2_subdev_core_ops ov13b10_core_ops = {
 
 static const struct v4l2_subdev_video_ops ov13b10_video_ops = {
 	.s_stream = ov13b10_s_stream,
-	.g_frame_interval = ov13b10_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops ov13b10_pad_ops = {
@@ -1435,6 +1435,7 @@ static const struct v4l2_subdev_pad_ops ov13b10_pad_ops = {
 	.enum_frame_size = ov13b10_enum_frame_sizes,
 	.enum_frame_interval = ov13b10_enum_frame_interval,
 	.get_fmt = ov13b10_get_fmt,
+	.get_frame_interval = ov13b10_g_frame_interval,
 	.set_fmt = ov13b10_set_fmt,
 	.get_selection = ov13b10_get_selection,
 	.get_mbus_config = ov13b10_g_mbus_config,
@@ -1661,8 +1662,7 @@ static int ov13b10_configure_regulators(struct ov13b10 *ov13b10)
 				       ov13b10->supplies);
 }
 
-static int ov13b10_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ov13b10_probe(struct i2c_client *client)
 {
 		struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

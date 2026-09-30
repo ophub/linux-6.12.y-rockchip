@@ -1281,7 +1281,7 @@ static int os04e10_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&os04e10->mutex);
 		return -ENOTTY;
@@ -1314,7 +1314,7 @@ static int os04e10_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&os04e10->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&os04e10->mutex);
 		return -ENOTTY;
@@ -1384,6 +1384,7 @@ static int os04e10_enable_test_pattern(struct os04e10 *os04e10, u32 pattern)
 }
 
 static int os04e10_g_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct os04e10 *os04e10 = to_os04e10(sd);
@@ -1810,7 +1811,7 @@ static int os04e10_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct os04e10 *os04e10 = to_os04e10(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_get_try_format(sd, fh->state, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct os04e10_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&os04e10->mutex);
@@ -1862,7 +1863,6 @@ static const struct v4l2_subdev_core_ops os04e10_core_ops = {
 
 static const struct v4l2_subdev_video_ops os04e10_video_ops = {
 	.s_stream = os04e10_s_stream,
-	.g_frame_interval = os04e10_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops os04e10_pad_ops = {
@@ -1870,6 +1870,7 @@ static const struct v4l2_subdev_pad_ops os04e10_pad_ops = {
 	.enum_frame_size = os04e10_enum_frame_sizes,
 	.enum_frame_interval = os04e10_enum_frame_interval,
 	.get_fmt = os04e10_get_fmt,
+	.get_frame_interval = os04e10_g_frame_interval,
 	.set_fmt = os04e10_set_fmt,
 	.get_mbus_config = os04e10_g_mbus_config,
 };
@@ -2184,8 +2185,7 @@ static void find_terminal_resolution(struct os04e10 *os04e10)
 }
 #endif
 
-static int os04e10_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int os04e10_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

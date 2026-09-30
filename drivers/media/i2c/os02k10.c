@@ -920,7 +920,7 @@ static const struct os02k10_mode supported_modes[] = {
 		.hdr_mode = NO_HDR,
 		.bpp = 10,
 		.mipi_freq_idx = 1,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	}, {
 		.width = 640,
 		.height = 480,
@@ -936,7 +936,7 @@ static const struct os02k10_mode supported_modes[] = {
 		.hdr_mode = NO_HDR,
 		.bpp = 10,
 		.mipi_freq_idx = 1,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	},
 };
 
@@ -1070,7 +1070,7 @@ os02k10_find_best_fit(struct v4l2_subdev_format *fmt)
 }
 
 static int os02k10_set_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *state,
 			   struct v4l2_subdev_format *fmt)
 {
 	struct os02k10 *os02k10 = to_os02k10(sd);
@@ -1087,7 +1087,7 @@ static int os02k10_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_state_get_format(cfg, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&os02k10->mutex);
 		return -ENOTTY;
@@ -1115,7 +1115,7 @@ static int os02k10_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int os02k10_get_fmt(struct v4l2_subdev *sd,
-			   struct v4l2_subdev_pad_config *cfg,
+			   struct v4l2_subdev_state *state,
 			   struct v4l2_subdev_format *fmt)
 {
 	struct os02k10 *os02k10 = to_os02k10(sd);
@@ -1124,7 +1124,7 @@ static int os02k10_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&os02k10->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_state_get_format(cfg, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(state, fmt->pad);
 #else
 		mutex_unlock(&os02k10->mutex);
 		return -ENOTTY;
@@ -1146,7 +1146,7 @@ static int os02k10_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int os02k10_enum_mbus_code(struct v4l2_subdev *sd,
-				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_state *state,
 				  struct v4l2_subdev_mbus_code_enum *code)
 {
 	struct os02k10 *os02k10 = to_os02k10(sd);
@@ -1159,7 +1159,7 @@ static int os02k10_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int os02k10_enum_frame_sizes(struct v4l2_subdev *sd,
-				    struct v4l2_subdev_pad_config *cfg,
+				    struct v4l2_subdev_state *state,
 				    struct v4l2_subdev_frame_size_enum *fse)
 {
 	if (fse->index >= ARRAY_SIZE(supported_modes))
@@ -1208,22 +1208,12 @@ static int os02k10_g_frame_interval(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int os02k10_g_mbus_config(struct v4l2_subdev *sd, unsigned int pad_id,
+static int os02k10_g_mbus_config(struct v4l2_subdev *sd,
+				 unsigned int pad_id,
 				 struct v4l2_mbus_config *config)
 {
-	struct os02k10 *os02k10 = to_os02k10(sd);
-	const struct os02k10_mode *mode = os02k10->cur_mode;
-	u32 val = 1 << (OS02K10_LANES - 1) |
-		V4L2_MBUS_CSI2_CHANNEL_0 |
-		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-
-	if (mode->hdr_mode != NO_HDR)
-		val |= V4L2_MBUS_CSI2_CHANNEL_1;
-	if (mode->hdr_mode == HDR_X3)
-		val |= V4L2_MBUS_CSI2_CHANNEL_2;
-
 	config->type = V4L2_MBUS_CSI2_DPHY;
-	config->flags = val;
+	config->bus.mipi_csi2.num_data_lanes = OS02K10_LANES;
 
 	return 0;
 }
@@ -1719,7 +1709,7 @@ static int os02k10_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct os02k10 *os02k10 = to_os02k10(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_state_get_format(fh->pad, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct os02k10_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&os02k10->mutex);
@@ -1737,7 +1727,7 @@ static int os02k10_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #endif
 
 static int os02k10_enum_frame_interval(struct v4l2_subdev *sd,
-				       struct v4l2_subdev_pad_config *cfg,
+				       struct v4l2_subdev_state *state,
 				       struct v4l2_subdev_frame_interval_enum *fie)
 {
 	if (fie->index >= ARRAY_SIZE(supported_modes))
@@ -2199,7 +2189,7 @@ static int os02k10_probe(struct i2c_client *client)
 	snprintf(sd->name, sizeof(sd->name), "m%02d_%s_%s %s",
 		 os02k10->module_index, facing,
 		 OS02K10_NAME, dev_name(sd->dev));
-	ret = v4l2_async_register_subdev_sensor_common(sd);
+	ret = v4l2_async_register_subdev_sensor(sd);
 	if (ret) {
 		dev_err(dev, "v4l2 async register subdev failed\n");
 		goto err_clean_entity;
@@ -2228,7 +2218,7 @@ err_destroy_mutex:
 	return ret;
 }
 
-static int os02k10_remove(struct i2c_client *client)
+static void os02k10_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct os02k10 *os02k10 = to_os02k10(sd);
@@ -2245,7 +2235,6 @@ static int os02k10_remove(struct i2c_client *client)
 		__os02k10_power_off(os02k10);
 	pm_runtime_set_suspended(&client->dev);
 
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF)

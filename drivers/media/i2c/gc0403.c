@@ -608,8 +608,9 @@ static int gc0403_enum_frame_sizes(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int gc0403_g_frame_interval(struct v4l2_subdev *sd,
-				   struct v4l2_subdev_frame_interval *fi)
+static int gc0403_get_frame_interval(struct v4l2_subdev *sd,
+				     struct v4l2_subdev_state *sd_state,
+				     struct v4l2_subdev_frame_interval *fi)
 {
 	struct gc0403 *gc0403 = to_gc0403(sd);
 	const struct gc0403_mode *mode = gc0403->cur_mode;
@@ -943,7 +944,6 @@ static struct v4l2_subdev_core_ops gc0403_core_ops = {
 
 static const struct v4l2_subdev_video_ops gc0403_video_ops = {
 	.s_stream = gc0403_s_stream,
-	.g_frame_interval = gc0403_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops gc0403_pad_ops = {
@@ -953,6 +953,7 @@ static const struct v4l2_subdev_pad_ops gc0403_pad_ops = {
 	.get_fmt = gc0403_get_fmt,
 	.set_fmt = gc0403_set_fmt,
 	.get_mbus_config = gc0403_g_mbus_config,
+	.get_frame_interval = gc0403_get_frame_interval,
 };
 
 static const struct v4l2_subdev_ops gc0403_subdev_ops = {

@@ -683,7 +683,7 @@ static int sc8238_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) =
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) =
 		    fmt->format;
 #else
 		mutex_unlock(&sc8238->mutex);
@@ -723,7 +723,7 @@ static int sc8238_get_fmt(struct v4l2_subdev *sd,
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
 		fmt->format =
-		    *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		    *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&sc8238->mutex);
 		return -ENOTTY;
@@ -793,6 +793,7 @@ static int sc8238_enable_test_pattern(struct sc8238 *sc8238, u32 pattern)
 }
 
 static int sc8238_g_frame_interval(struct v4l2_subdev *sd,
+				   struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc8238 *sc8238 = to_sc8238(sd);
@@ -832,6 +833,7 @@ static const struct sc8238_mode *sc8238_find_mode(struct sc8238 *sc8238,
 }
 
 static int sc8238_s_frame_interval(struct v4l2_subdev *sd,
+				   struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct sc8238 *sc8238 = to_sc8238(sd);
@@ -1384,7 +1386,7 @@ static int sc8238_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc8238 *sc8238 = to_sc8238(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-	    v4l2_subdev_get_try_format(sd, fh->state, 0);
+	    v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc8238_mode *def_mode = &sc8238->supported_modes[0];
 
 	mutex_lock(&sc8238->mutex);
@@ -1444,8 +1446,6 @@ static const struct v4l2_subdev_core_ops sc8238_core_ops = {
 
 static const struct v4l2_subdev_video_ops sc8238_video_ops = {
 	.s_stream = sc8238_s_stream,
-	.g_frame_interval = sc8238_g_frame_interval,
-	.s_frame_interval = sc8238_s_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops sc8238_pad_ops = {
@@ -1453,6 +1453,8 @@ static const struct v4l2_subdev_pad_ops sc8238_pad_ops = {
 	.enum_frame_size = sc8238_enum_frame_sizes,
 	.enum_frame_interval = sc8238_enum_frame_interval,
 	.get_fmt = sc8238_get_fmt,
+	.get_frame_interval = sc8238_g_frame_interval,
+	.set_frame_interval = sc8238_s_frame_interval,
 	.set_fmt = sc8238_set_fmt,
 	.get_mbus_config = sc8238_g_mbus_config,
 };
@@ -1708,8 +1710,7 @@ static int sc8238_configure_regulators(struct sc8238 *sc8238)
 				       SC8238_NUM_SUPPLIES, sc8238->supplies);
 }
 
-static int sc8238_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int sc8238_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

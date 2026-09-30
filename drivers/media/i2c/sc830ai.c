@@ -562,7 +562,7 @@ static const struct sc830ai_mode supported_modes[] = {
 		.hdr_mode = NO_HDR,
 		.mipi_freq_idx = 0,
 		.bpp = 10,
-		.vc[PAD0] = V4L2_MBUS_CSI2_CHANNEL_0,
+		.vc[PAD0] = 0,
 	},
 };
 
@@ -694,7 +694,7 @@ static void sc830ai_change_mode(struct sc830ai *sc830ai, const struct sc830ai_mo
 }
 
 static int sc830ai_set_fmt(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
+			  struct v4l2_subdev_state *state,
 			  struct v4l2_subdev_format *fmt)
 {
 	struct sc830ai *sc830ai = to_sc830ai(sd);
@@ -711,7 +711,7 @@ static int sc830ai_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_state_get_format(cfg, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&sc830ai->mutex);
 		return -ENOTTY;
@@ -739,7 +739,7 @@ static int sc830ai_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int sc830ai_get_fmt(struct v4l2_subdev *sd,
-			  struct v4l2_subdev_pad_config *cfg,
+			  struct v4l2_subdev_state *state,
 			  struct v4l2_subdev_format *fmt)
 {
 	struct sc830ai *sc830ai = to_sc830ai(sd);
@@ -748,7 +748,7 @@ static int sc830ai_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&sc830ai->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_state_get_format(cfg, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(state, fmt->pad);
 #else
 		mutex_unlock(&sc830ai->mutex);
 		return -ENOTTY;
@@ -769,7 +769,7 @@ static int sc830ai_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int sc830ai_enum_mbus_code(struct v4l2_subdev *sd,
-				 struct v4l2_subdev_pad_config *cfg,
+				 struct v4l2_subdev_state *state,
 				 struct v4l2_subdev_mbus_code_enum *code)
 {
 	struct sc830ai *sc830ai = to_sc830ai(sd);
@@ -782,7 +782,7 @@ static int sc830ai_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int sc830ai_enum_frame_sizes(struct v4l2_subdev *sd,
-				   struct v4l2_subdev_pad_config *cfg,
+				   struct v4l2_subdev_state *state,
 				   struct v4l2_subdev_frame_size_enum *fse)
 {
 	struct sc830ai *sc830ai = to_sc830ai(sd);
@@ -836,22 +836,8 @@ static int sc830ai_g_mbus_config(struct v4l2_subdev *sd,
 				 unsigned int pad_id,
 				 struct v4l2_mbus_config *config)
 {
-	struct sc830ai *sc830ai = to_sc830ai(sd);
-	const struct sc830ai_mode *mode = sc830ai->cur_mode;
-	u32 val = 0;
-
-	if (mode->hdr_mode == NO_HDR)
-		val = 1 << (SC830AI_2LANES - 1) |
-		V4L2_MBUS_CSI2_CHANNEL_0 |
-		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-	if (mode->hdr_mode == HDR_X2)
-		val = 1 << (SC830AI_2LANES - 1) |
-		V4L2_MBUS_CSI2_CHANNEL_0 |
-		V4L2_MBUS_CSI2_CONTINUOUS_CLOCK |
-		V4L2_MBUS_CSI2_CHANNEL_1;
-
 	config->type = V4L2_MBUS_CSI2_DPHY;
-	config->flags = val;
+	config->bus.mipi_csi2.num_data_lanes = SC830AI_2LANES;
 
 	return 0;
 }
@@ -1377,7 +1363,7 @@ static int sc830ai_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct sc830ai *sc830ai = to_sc830ai(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_state_get_format(fh->pad, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct sc830ai_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&sc830ai->mutex);
@@ -1395,7 +1381,7 @@ static int sc830ai_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #endif
 
 static int sc830ai_enum_frame_interval(struct v4l2_subdev *sd,
-		struct v4l2_subdev_pad_config *cfg,
+		struct v4l2_subdev_state *state,
 		struct v4l2_subdev_frame_interval_enum *fie)
 {
 	struct sc830ai *sc830ai = to_sc830ai(sd);
@@ -1418,7 +1404,7 @@ static int sc830ai_enum_frame_interval(struct v4l2_subdev *sd,
 #define DST_HEIGHT_1080 1080
 
 static int sc830ai_get_selection(struct v4l2_subdev *sd,
-				 struct v4l2_subdev_pad_config *cfg,
+				 struct v4l2_subdev_state *state,
 				 struct v4l2_subdev_selection *sel)
 {
 	struct sc830ai *sc830ai = to_sc830ai(sd);
@@ -1843,7 +1829,7 @@ static int sc830ai_probe(struct i2c_client *client)
 		 sc830ai->module_index, facing,
 		 SC830AI_NAME, dev_name(sd->dev));
 
-	ret = v4l2_async_register_subdev_sensor_common(sd);
+	ret = v4l2_async_register_subdev_sensor(sd);
 	if (ret) {
 		dev_err(dev, "v4l2 async register subdev failed\n");
 		goto err_clean_entity;
@@ -1869,7 +1855,7 @@ err_destroy_mutex:
 	return ret;
 }
 
-static int sc830ai_remove(struct i2c_client *client)
+static void sc830ai_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct sc830ai *sc830ai = to_sc830ai(sd);
@@ -1886,7 +1872,6 @@ static int sc830ai_remove(struct i2c_client *client)
 		__sc830ai_power_off(sc830ai);
 	pm_runtime_set_suspended(&client->dev);
 
-	return 0;
 }
 
 #if IS_ENABLED(CONFIG_OF)

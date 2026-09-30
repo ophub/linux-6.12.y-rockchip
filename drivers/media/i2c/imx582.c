@@ -631,7 +631,7 @@ static int imx582_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&imx582->mutex);
 		return -ENOTTY;
@@ -671,7 +671,7 @@ static int imx582_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&imx582->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&imx582->mutex);
 		return -ENOTTY;
@@ -749,6 +749,7 @@ static int imx582_enable_test_pattern(struct imx582 *imx582, u32 pattern)
 }
 
 static int imx582_g_frame_interval(struct v4l2_subdev *sd,
+				   struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct imx582 *imx582 = to_imx582(sd);
@@ -1304,7 +1305,7 @@ static int imx582_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct imx582 *imx582 = to_imx582(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_get_try_format(sd, fh->state, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct imx582_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&imx582->mutex);
@@ -1359,7 +1360,6 @@ static const struct v4l2_subdev_core_ops imx582_core_ops = {
 
 static const struct v4l2_subdev_video_ops imx582_video_ops = {
 	.s_stream = imx582_s_stream,
-	.g_frame_interval = imx582_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops imx582_pad_ops = {
@@ -1367,6 +1367,7 @@ static const struct v4l2_subdev_pad_ops imx582_pad_ops = {
 	.enum_frame_size = imx582_enum_frame_sizes,
 	.enum_frame_interval = imx582_enum_frame_interval,
 	.get_fmt = imx582_get_fmt,
+	.get_frame_interval = imx582_g_frame_interval,
 	.set_fmt = imx582_set_fmt,
 	.get_mbus_config = imx582_g_mbus_config,
 };
@@ -1608,8 +1609,7 @@ static int imx582_configure_regulators(struct imx582 *imx582)
 				       imx582->supplies);
 }
 
-static int imx582_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int imx582_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

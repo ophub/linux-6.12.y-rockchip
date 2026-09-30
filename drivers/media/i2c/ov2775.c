@@ -97,7 +97,6 @@
 struct ov2775_gpio {
 	int pltfrm_gpio;
 	const char *label;
-	enum of_gpio_flags active_low;
 };
 
 static const char * const ov2775_supply_names[] = {
@@ -4000,7 +3999,7 @@ static int ov2775_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&ov2775->mutex);
 		return -ENOTTY;
@@ -4031,7 +4030,7 @@ static int ov2775_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&ov2775->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&ov2775->mutex);
 		return -ENOTTY;
@@ -4711,7 +4710,7 @@ static int ov2775_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct ov2775 *ov2775 = to_ov2775(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-			v4l2_subdev_get_try_format(sd, fh->state, 0);
+			v4l2_subdev_state_get_format(fh->state, 0);
 	const struct ov2775_mode *def_mode = &ov2775->support_modes[0];
 
 	mutex_lock(&ov2775->mutex);
@@ -5104,8 +5103,7 @@ static int ov2775_analyze_dts(struct ov2775 *ov2775)
 	return ov2775_get_regulators(ov2775);
 }
 
-static int ov2775_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ov2775_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

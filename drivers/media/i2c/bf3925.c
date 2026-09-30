@@ -1312,13 +1312,12 @@ static int bf3925_parse_of(struct bf3925 *bf3925)
 	struct device_node *node = dev->of_node;
 	struct gpio_desc *pwdn_gpio;
 	unsigned int pwdn = -1;
-	enum of_gpio_flags flags;
 	int ret;
 
 	bf3925->pwdn_gpio = devm_gpiod_get(dev, "pwdn", GPIOD_OUT_LOW);
 	if (IS_ERR(bf3925->pwdn_gpio)) {
 		dev_info(dev, "Failed to get pwdn-gpios, maybe no use\n");
-		pwdn = of_get_named_gpio_flags(node, "pwdn-gpios", 0, &flags);
+		pwdn = of_get_named_gpio(node, "pwdn-gpios", 0);
 		pwdn_gpio = gpio_to_desc(pwdn);
 		if (IS_ERR(pwdn_gpio))
 			dev_info(dev, "Failed to get pwdn-gpios again\n");
@@ -1329,7 +1328,7 @@ static int bf3925_parse_of(struct bf3925 *bf3925)
 	bf3925->pwdn2_gpio = devm_gpiod_get(dev, "pwdn2", GPIOD_OUT_LOW);
 	if (IS_ERR(bf3925->pwdn2_gpio)) {
 		dev_info(dev, "Failed to get pwdn2-gpios, maybe no use\n");
-		pwdn = of_get_named_gpio_flags(node, "pwdn2-gpios", 0, &flags);
+		pwdn = of_get_named_gpio(node, "pwdn2-gpios", 0);
 		pwdn_gpio = gpio_to_desc(pwdn);
 		if (IS_ERR(pwdn_gpio))
 			dev_info(dev, "Failed to get pwdn2-gpios again\n");

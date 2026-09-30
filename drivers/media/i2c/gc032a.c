@@ -643,7 +643,7 @@ static int gc032a_get_fmt(struct v4l2_subdev *sd,
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
 		struct v4l2_mbus_framefmt *mf;
 
-		mf = v4l2_subdev_get_try_format(sd, sd_state, 0);
+		mf = v4l2_subdev_state_get_format(sd_state, 0);
 		mutex_lock(&gc032a->lock);
 		fmt->format = *mf;
 		mutex_unlock(&gc032a->lock);
@@ -722,7 +722,7 @@ static int gc032a_set_fmt(struct v4l2_subdev *sd,
 
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		mf = v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		mf = v4l2_subdev_state_get_format(sd_state, fmt->pad);
 		*mf = fmt->format;
 #else
 		return -ENOTTY;
@@ -890,7 +890,7 @@ static int gc032a_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct v4l2_mbus_framefmt *format =
-				v4l2_subdev_get_try_format(sd, fh->state, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 
 	dev_dbg(&client->dev, "%s:\n", __func__);
 
@@ -1099,8 +1099,7 @@ static int gc032a_parse_of(struct gc032a *gc032a)
 	return __gc032a_power_on(gc032a);
 }
 
-static int gc032a_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int gc032a_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

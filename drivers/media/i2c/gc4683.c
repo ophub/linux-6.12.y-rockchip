@@ -629,7 +629,7 @@ static int gc4683_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&gc4683->mutex);
 		return -ENOTTY;
@@ -668,7 +668,7 @@ static int gc4683_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&gc4683->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&gc4683->mutex);
 		return -ENOTTY;
@@ -782,6 +782,7 @@ static int gc4683_set_mirror_flip(struct gc4683 *gc4683, u8 val, u8 otp_val)
 }
 
 static int gc4683_g_frame_interval(struct v4l2_subdev *sd,
+				   struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_frame_interval *fi)
 {
 	struct gc4683 *gc4683 = to_gc4683(sd);
@@ -1206,7 +1207,7 @@ static int gc4683_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct gc4683 *gc4683 = to_gc4683(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-				v4l2_subdev_get_try_format(sd, fh->state, 0);
+				v4l2_subdev_state_get_format(fh->state, 0);
 	const struct gc4683_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&gc4683->mutex);
@@ -1291,7 +1292,6 @@ static const struct v4l2_subdev_core_ops gc4683_core_ops = {
 
 static const struct v4l2_subdev_video_ops gc4683_video_ops = {
 	.s_stream = gc4683_s_stream,
-	.g_frame_interval = gc4683_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops gc4683_pad_ops = {
@@ -1299,6 +1299,7 @@ static const struct v4l2_subdev_pad_ops gc4683_pad_ops = {
 	.enum_frame_size = gc4683_enum_frame_sizes,
 	.enum_frame_interval = gc4683_enum_frame_interval,
 	.get_fmt = gc4683_get_fmt,
+	.get_frame_interval = gc4683_g_frame_interval,
 	.set_fmt = gc4683_set_fmt,
 //	.get_selection = gc4683_get_selection,
 	.get_mbus_config = gc4683_g_mbus_config,
@@ -1525,8 +1526,7 @@ static int gc4683_configure_regulators(struct gc4683 *gc4683)
 				       gc4683->supplies);
 }
 
-static int gc4683_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int gc4683_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

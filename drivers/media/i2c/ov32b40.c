@@ -3503,7 +3503,7 @@ static int ov32b40_set_fmt(struct v4l2_subdev *sd,
 	fmt->format.field = V4L2_FIELD_NONE;
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		*v4l2_subdev_get_try_format(sd, sd_state, fmt->pad) = fmt->format;
+		*v4l2_subdev_state_get_format(sd_state, fmt->pad) = fmt->format;
 #else
 		mutex_unlock(&ov32b40->mutex);
 		return -ENOTTY;
@@ -3543,7 +3543,7 @@ static int ov32b40_get_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&ov32b40->mutex);
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 #ifdef CONFIG_VIDEO_V4L2_SUBDEV_API
-		fmt->format = *v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		fmt->format = *v4l2_subdev_state_get_format(sd_state, fmt->pad);
 #else
 		mutex_unlock(&ov32b40->mutex);
 		return -ENOTTY;
@@ -3610,6 +3610,7 @@ static int ov32b40_enable_test_pattern(struct ov32b40 *ov32b40, u32 pattern)
 }
 
 static int ov32b40_g_frame_interval(struct v4l2_subdev *sd,
+				    struct v4l2_subdev_state *sd_state,
 				    struct v4l2_subdev_frame_interval *fi)
 {
 	struct ov32b40 *ov32b40 = to_ov32b40(sd);
@@ -4098,7 +4099,7 @@ static int ov32b40_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct ov32b40 *ov32b40 = to_ov32b40(sd);
 	struct v4l2_mbus_framefmt *try_fmt =
-			v4l2_subdev_get_try_format(sd, fh->state, 0);
+			v4l2_subdev_state_get_format(fh->state, 0);
 	const struct ov32b40_mode *def_mode = &supported_modes[0];
 
 	mutex_lock(&ov32b40->mutex);
@@ -4206,7 +4207,6 @@ static const struct v4l2_subdev_core_ops ov32b40_core_ops = {
 
 static const struct v4l2_subdev_video_ops ov32b40_video_ops = {
 	.s_stream = ov32b40_s_stream,
-	.g_frame_interval = ov32b40_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops ov32b40_pad_ops = {
@@ -4214,6 +4214,7 @@ static const struct v4l2_subdev_pad_ops ov32b40_pad_ops = {
 	.enum_frame_size = ov32b40_enum_frame_sizes,
 	.enum_frame_interval = ov32b40_enum_frame_interval,
 	.get_fmt = ov32b40_get_fmt,
+	.get_frame_interval = ov32b40_g_frame_interval,
 	.set_fmt = ov32b40_set_fmt,
 	.get_selection = ov32b40_get_selection,
 	.get_mbus_config = ov32b40_g_mbus_config,
@@ -4524,8 +4525,7 @@ static int ov32b40_configure_regulators(struct ov32b40 *ov32b40)
 				       ov32b40->supplies);
 }
 
-static int ov32b40_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ov32b40_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct device_node *node = dev->of_node;

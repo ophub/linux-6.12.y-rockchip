@@ -485,8 +485,7 @@ static int lt7911d_fb_notifier_callback(struct notifier_block *self,
 	return 0;
 }
 
-static int lt7911d_i2c_probe(struct i2c_client *client,
-			      const struct i2c_device_id *id)
+static int lt7911d_i2c_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct lt7911d *lt7911d;

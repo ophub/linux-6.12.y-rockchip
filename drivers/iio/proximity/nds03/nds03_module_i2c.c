@@ -14,8 +14,8 @@
 
 struct nds03_context *nds03_context_obj = NULL;
 
-// int nds03_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
-static int nds03_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
+// int nds03_i2c_probe(struct i2c_client *client)
+static int nds03_i2c_probe(struct i2c_client *client)
 {
 	int ret = 0;
 	struct device *dev = &client->dev;

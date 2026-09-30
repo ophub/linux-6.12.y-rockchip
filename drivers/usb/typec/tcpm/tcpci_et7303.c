@@ -8,6 +8,7 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/bitfield.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
 #include <linux/gpio/consumer.h>
@@ -135,25 +136,22 @@ static int et7303_start_drp_toggling(struct tcpci *tcpci,
 	switch (cc) {
 	default:
 	case TYPEC_CC_RP_DEF:
-		reg |= (TCPC_ROLE_CTRL_RP_VAL_DEF <<
-			TCPC_ROLE_CTRL_RP_VAL_SHIFT);
+		reg |= FIELD_PREP(TCPC_ROLE_CTRL_RP_VAL, TCPC_ROLE_CTRL_RP_VAL_DEF);
 		break;
 	case TYPEC_CC_RP_1_5:
-		reg |= (TCPC_ROLE_CTRL_RP_VAL_1_5 <<
-			TCPC_ROLE_CTRL_RP_VAL_SHIFT);
+		reg |= FIELD_PREP(TCPC_ROLE_CTRL_RP_VAL, TCPC_ROLE_CTRL_RP_VAL_1_5);
 		break;
 	case TYPEC_CC_RP_3_0:
-		reg |= (TCPC_ROLE_CTRL_RP_VAL_3_0 <<
-			TCPC_ROLE_CTRL_RP_VAL_SHIFT);
+		reg |= FIELD_PREP(TCPC_ROLE_CTRL_RP_VAL, TCPC_ROLE_CTRL_RP_VAL_3_0);
 		break;
 	}
 
 	if (cc == TYPEC_CC_RD)
-		reg |= (TCPC_ROLE_CTRL_CC_RD << TCPC_ROLE_CTRL_CC1_SHIFT) |
-			   (TCPC_ROLE_CTRL_CC_RD << TCPC_ROLE_CTRL_CC2_SHIFT);
+		reg |= (FIELD_PREP(TCPC_ROLE_CTRL_CC1, TCPC_ROLE_CTRL_CC_RD) |
+			FIELD_PREP(TCPC_ROLE_CTRL_CC2, TCPC_ROLE_CTRL_CC_RD));
 	else
-		reg |= (TCPC_ROLE_CTRL_CC_RP << TCPC_ROLE_CTRL_CC1_SHIFT) |
-			   (TCPC_ROLE_CTRL_CC_RP << TCPC_ROLE_CTRL_CC2_SHIFT);
+		reg |= (FIELD_PREP(TCPC_ROLE_CTRL_CC1, TCPC_ROLE_CTRL_CC_RP) |
+			FIELD_PREP(TCPC_ROLE_CTRL_CC2, TCPC_ROLE_CTRL_CC_RP));
 
 	ret = et7303_write8(chip, TCPC_ROLE_CTRL, reg);
 	if (ret < 0)

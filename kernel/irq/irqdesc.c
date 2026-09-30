@@ -428,9 +428,13 @@ struct irq_desc *irq_to_desc(unsigned int irq)
 {
 	return mtree_load(&sparse_irqs, irq);
 }
-#ifdef CONFIG_KVM_BOOK3S_64_HV_MODULE
+/*
+ * Rockchip BSP: export unconditionally instead of only for
+ * CONFIG_KVM_BOOK3S_64_HV_MODULE, so that the (GPL) chipone-ts,
+ * focaltech touch and rockchip_pwm_remotectl drivers can resolve
+ * irq_to_desc() when built as modules.
+ */
 EXPORT_SYMBOL_GPL(irq_to_desc);
-#endif
 
 void irq_lock_sparse(void)
 {

@@ -381,7 +381,7 @@ static void spidev_rkslv_remove(struct spi_device *spi)
 	struct spidev_rkslv_data *spidev = dev_get_drvdata(&spi->dev);
 
 	spidev->tsk_run = false;
-	spi_slave_abort(spi);
+	spi_target_abort(spi);
 	kthread_stop(spidev->tsk);
 	misc_deregister(&spidev->misc_dev);
 }

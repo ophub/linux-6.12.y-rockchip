@@ -654,23 +654,12 @@
 };
 
 /* MULTI_PHY0 For SATA0, USB3.0 OTG Only USB2.0 */
-&usb_host0_xhci {
-	phys = <&usb2phy0_otg>;
-	phy-names = "usb2-phy";
-	extcon = <&usb2phy0>;
-	maximum-speed = "high-speed";
-	dr_mode = "host";
-	status = "okay";
-};
 
 &sata0 {
 	status = "okay";
 };
 
 /* USB3.0 Host */
-&usb_host1_xhci {
-	status = "okay";
-};
 
 &vop {
 	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
@@ -725,4 +714,25 @@
 			rockchip,pins = <0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	phys = <&usb2phy0_otg>;
+	phy-names = "usb2-phy";
+	extcon = <&usb2phy0>;
+	maximum-speed = "high-speed";
+	dr_mode = "host";
+	status = "okay";
 };

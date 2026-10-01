@@ -374,24 +374,6 @@
 	};
 };
 
-&package_thermal {
-	polling-delay = <1000>;
-
-	trips {
-		package_fan0: package-fan0 {
-			hysteresis = <2000>;
-			temperature = <60000>;
-			type = "active";
-		};
-	};
-
-	cooling-maps {
-		map0 {
-			cooling-device = <&fan 1 THERMAL_NO_LIMIT>;
-			trip = <&package_fan0>;
-		};
-	};
-};
 
 &pcie2x1l2 {
 	pinctrl-names = "default";
@@ -856,16 +838,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	usb-role-switch;
-	status = "okay";
-
-	port {
-		usb_host0_xhci_role_switch: endpoint {
-			remote-endpoint = <&usbc0_role_switch>;
-		};
-	};
-};
 
 &usb_host1_ehci {
 	status = "okay";
@@ -875,9 +847,6 @@
 	status = "okay";
 };
 
-&usb_host2_xhci {
-	status = "okay";
-};
 
 &usbdp_phy0 {
 	mode-switch;
@@ -900,4 +869,27 @@
 			remote-endpoint = <&usbc0_dp_altmode_mux>;
 		};
 	};
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	usb-role-switch;
+	status = "okay";
+
+	port {
+		usb_host0_xhci_role_switch: endpoint {
+			remote-endpoint = <&usbc0_role_switch>;
+		};
+	};
+};
+
+&usbhost3_0 {
+	status = "okay";
+};
+
+&usbhost_dwc3_0 {
+	status = "okay";
 };

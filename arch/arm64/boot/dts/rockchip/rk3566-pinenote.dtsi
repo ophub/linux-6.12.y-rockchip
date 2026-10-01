@@ -698,10 +698,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	dr_mode = "otg";
-	status = "okay";
-};
 
 &usb2phy0 {
 	status = "okay";
@@ -715,4 +711,13 @@
 			remote-endpoint = <&typec_hs_usb2phy0>;
 		};
 	};
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	dr_mode = "otg";
+	status = "okay";
 };

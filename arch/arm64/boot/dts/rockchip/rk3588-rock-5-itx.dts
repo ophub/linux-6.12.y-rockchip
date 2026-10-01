@@ -448,34 +448,6 @@
 	};
 };
 
-&package_thermal {
-	polling-delay = <1000>;
-
-	trips {
-		package_fan0: package-fan0 {
-			hysteresis = <2000>;
-			temperature = <50000>;
-			type = "active";
-		};
-
-		package_fan1: package-fan1 {
-			hysteresis = <2000>;
-			temperature = <65000>;
-			type = "active";
-		};
-	};
-
-	cooling-maps {
-		map0 {
-			cooling-device = <&fan0 THERMAL_NO_LIMIT 1>;
-			trip = <&package_fan0>;
-		};
-		map1 {
-			cooling-device = <&fan0 2 THERMAL_NO_LIMIT>;
-			trip = <&package_fan1>;
-		};
-	};
-};
 
 /* M.2 E-key */
 &pcie2x1l0 {
@@ -1108,46 +1080,7 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	usb-role-switch;
-	status = "okay";
 
-	port {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		dwc3_0_role_switch: endpoint@0 {
-			reg = <0>;
-			remote-endpoint = <&usbc0_role_sw>;
-		};
-	};
-};
-
-&usb_host1_xhci {
-	dr_mode = "host";
-	#address-cells = <1>;
-	#size-cells = <0>;
-	status = "okay";
-
-	/* 2.0 hub on port 1 */
-	hub_2_0: hub@1 {
-		compatible = "usb5e3,610";
-		reg = <1>;
-		peer-hub = <&hub_3_0>;
-		vdd-supply = <&vcc_3v3_s3>;
-	};
-
-	/* 3.0 hub on port 4 */
-	hub_3_0: hub@2 {
-		compatible = "usb5e3,620";
-		reg = <2>;
-		peer-hub = <&hub_2_0>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&gl3523_reset>;
-		reset-gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_LOW>;
-		vdd-supply = <&vcc_3v3_s3>;
-	};
-};
 
 &usbdp_phy0 {
 	mode-switch;
@@ -1174,4 +1107,53 @@
 &usbdp_phy1 {
 	rockchip,dp-lane-mux = <2 3>;
 	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	usb-role-switch;
+	status = "okay";
+
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		dwc3_0_role_switch: endpoint@0 {
+			reg = <0>;
+			remote-endpoint = <&usbc0_role_sw>;
+		};
+	};
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	dr_mode = "host";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	/* 2.0 hub on port 1 */
+	hub_2_0: hub@1 {
+		compatible = "usb5e3,610";
+		reg = <1>;
+		peer-hub = <&hub_3_0>;
+		vdd-supply = <&vcc_3v3_s3>;
+	};
+
+	/* 3.0 hub on port 4 */
+	hub_3_0: hub@2 {
+		compatible = "usb5e3,620";
+		reg = <2>;
+		peer-hub = <&hub_2_0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&gl3523_reset>;
+		reset-gpios = <&gpio3 RK_PB1 GPIO_ACTIVE_LOW>;
+		vdd-supply = <&vcc_3v3_s3>;
+	};
 };

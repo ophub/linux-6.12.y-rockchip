@@ -483,24 +483,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	dr_mode = "peripheral";
-	/* The following quirks are required since the bInterval is 1 and we
-	 * handle steady ISOC streaming. See Usecase 3 in commit 729dcffd1ed3
-	 * ("usb: dwc3: gadget: Add support for disabling U1 and U2 entries").
-	 */
-	snps,dis-u1-entry-quirk;
-	snps,dis-u2-entry-quirk;
-	/*
-	 * Without this quirk the available fifosize seems to be miscalculated
-	 * in cases where many endpoints are used. In one particular situation
-	 * 8 IN EPs and 3 OUT EPs where selected and lead to stalled transfers
-	 * without the resize quirk.
-	 */
-	tx-fifo-resize;
-
-	status = "okay";
-};
 
 &usb2phy0 {
 	status = "okay";
@@ -525,4 +507,27 @@
 		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
 		remote-endpoint = <&hdmi_in_vp0>;
 	};
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	dr_mode = "peripheral";
+	/* The following quirks are required since the bInterval is 1 and we
+	 * handle steady ISOC streaming. See Usecase 3 in commit 729dcffd1ed3
+	 * ("usb: dwc3: gadget: Add support for disabling U1 and U2 entries").
+	 */
+	snps,dis-u1-entry-quirk;
+	snps,dis-u2-entry-quirk;
+	/*
+	 * Without this quirk the available fifosize seems to be miscalculated
+	 * in cases where many endpoints are used. In one particular situation
+	 * 8 IN EPs and 3 OUT EPs where selected and lead to stalled transfers
+	 * without the resize quirk.
+	 */
+	tx-fifo-resize;
+
+	status = "okay";
 };

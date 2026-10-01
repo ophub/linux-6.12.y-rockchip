@@ -872,16 +872,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	usb-role-switch;
-	status = "okay";
-
-	port {
-		dwc3_0_role_switch: endpoint {
-			remote-endpoint = <&usbc0_role_sw>;
-		};
-	};
-};
 
 &usb_host1_ehci {
 	status = "okay";
@@ -891,9 +881,6 @@
 	status = "okay";
 };
 
-&usb_host2_xhci {
-	status = "okay";
-};
 
 &usbdp_phy0 {
 	orientation-switch;
@@ -915,6 +902,29 @@
 		usbdp_phy0_dp_altmode_mux: endpoint@1 {
 			reg = <1>;
 			remote-endpoint = <&dp_altmode_mux>;
+		};
+	};
+};
+
+&usbhost3_0 {
+	status = "okay";
+};
+
+&usbhost_dwc3_0 {
+	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	usb-role-switch;
+	status = "okay";
+
+	port {
+		dwc3_0_role_switch: endpoint {
+			remote-endpoint = <&usbc0_role_sw>;
 		};
 	};
 };

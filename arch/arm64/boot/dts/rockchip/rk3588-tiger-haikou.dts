@@ -295,11 +295,6 @@
 };
 
 /* host0_xhci on Q7_USB_P1, usb3-otg port */
-&usb_host0_xhci {
-	dr_mode = "otg";
-	extcon = <&extcon_usb3>;
-	status = "okay";
-};
 
 /* host1 on Q7_USB_P3, usb2 port */
 &usb_host1_ehci {
@@ -312,12 +307,32 @@
 };
 
 /* host1_xhci on Q7_USB_P0, lower usb3 port */
-&usb_host1_xhci {
+
+/* host2 on Q7_USB_P2, upper usb3 port */
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
 	dr_mode = "host";
 	status = "okay";
 };
 
-/* host2 on Q7_USB_P2, upper usb3 port */
-&usb_host2_xhci {
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	dr_mode = "otg";
+	extcon = <&extcon_usb3>;
+	status = "okay";
+};
+
+&usbhost3_0 {
+	status = "okay";
+};
+
+&usbhost_dwc3_0 {
 	status = "okay";
 };

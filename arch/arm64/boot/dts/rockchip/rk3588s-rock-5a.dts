@@ -769,10 +769,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	dr_mode = "host";
-	status = "okay";
-};
 
 &usb_host1_ehci {
 	status = "okay";
@@ -782,6 +778,20 @@
 	status = "okay";
 };
 
-&usb_host2_xhci {
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	dr_mode = "host";
+	status = "okay";
+};
+
+&usbhost3_0 {
+	status = "okay";
+};
+
+&usbhost_dwc3_0 {
 	status = "okay";
 };

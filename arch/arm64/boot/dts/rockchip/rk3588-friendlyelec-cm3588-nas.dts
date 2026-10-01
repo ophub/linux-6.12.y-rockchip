@@ -710,16 +710,6 @@
 
 /* USB Type-C */
 /* PHYs: <&u2phy0_otg>, <&usbdp_phy0 PHY_TYPE_USB3> */
-&usb_host0_xhci {
-	usb-role-switch;
-	status = "okay";
-
-	port {
-		dwc3_0_role_switch: endpoint {
-			remote-endpoint = <&usbc0_role_sw>;
-		};
-	};
-};
 
 /* Lower USB 3.0 Type-A (port 2) */
 /* PHY: <&u2phy3_host> */
@@ -735,16 +725,9 @@
 
 /* Upper USB 3.0 Type-A (port 1) */
 /* PHYs: <&u2phy1_otg>, <&usbdp_phy1 PHY_TYPE_USB3> */
-&usb_host1_xhci {
-	dr_mode = "host";
-	status = "okay";
-};
 
 /* Lower USB 3.0 Type-A (port 2) */
 /* PHYs: <&combphy2_psu PHY_TYPE_USB3> */
-&usb_host2_xhci {
-	status = "okay";
-};
 
 /* USB3 PHY for USB Type-C port */
 /* CM3588 USB Controller Config Table: USB30 OTG0 */
@@ -774,5 +757,37 @@
 /* USB3 PHY for USB 3.0 Type-A port 1 */
 /* CM3588 USB Controller Config Table: USB30 OTG1 */
 &usbdp_phy1 {
+	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	usb-role-switch;
+	status = "okay";
+
+	port {
+		dwc3_0_role_switch: endpoint {
+			remote-endpoint = <&usbc0_role_sw>;
+		};
+	};
+};
+
+&usbhost3_0 {
+	status = "okay";
+};
+
+&usbhost_dwc3_0 {
+	status = "okay";
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	dr_mode = "host";
 	status = "okay";
 };

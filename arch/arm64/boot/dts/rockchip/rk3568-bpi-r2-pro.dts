@@ -792,10 +792,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	dr_mode = "host";
-	status = "okay";
-};
 
 &usb_host1_ehci {
 	status = "okay";
@@ -805,9 +801,6 @@
 	status = "okay";
 };
 
-&usb_host1_xhci {
-	status = "okay";
-};
 
 &usb2phy0 {
 	status = "okay";
@@ -851,4 +844,21 @@
 		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
 		remote-endpoint = <&hdmi_in_vp0>;
 	};
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	dr_mode = "host";
+	status = "okay";
 };

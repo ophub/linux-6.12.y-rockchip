@@ -189,10 +189,15 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	status = "okay";
-};
 
 &vbus {
 	vin-supply = <&vcc5v_dcin>;
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	status = "okay";
 };

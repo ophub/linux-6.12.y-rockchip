@@ -529,6 +529,11 @@
 	status = "okay";
 };
 
-&usb_host1_xhci {
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
 	status = "okay";
 };

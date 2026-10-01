@@ -879,15 +879,7 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	phys = <&usb2phy0_otg>;
-	phy-names = "usb2-phy";
-	status = "okay";
-};
 
-&usb_host1_xhci {
-	status = "okay";
-};
 
 &usb2phy0 {
 	status = "okay";
@@ -924,4 +916,22 @@
 		reg = <ROCKCHIP_VOP2_EP_MIPI0>;
 		remote-endpoint = <&dsi0_in_vp1>;
 	};
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	phys = <&usb2phy0_otg>;
+	phy-names = "usb2-phy";
+	status = "okay";
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	status = "okay";
 };

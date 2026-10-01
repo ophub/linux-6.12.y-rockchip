@@ -219,9 +219,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	status = "okay";
-};
 
 &vbus {
 	vin-supply = <&vcc5v0_usb>;
@@ -232,5 +229,13 @@
 	regulator-boot-on;
 	regulator-min-microvolt = <3300000>;
 	regulator-max-microvolt = <3300000>;
+	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
 	status = "okay";
 };

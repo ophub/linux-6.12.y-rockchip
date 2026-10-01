@@ -327,11 +327,6 @@
 };
 
 /* Type C port */
-&usb_host0_xhci {
-	dr_mode = "peripheral";
-	maximum-speed = "high-speed";
-	status = "okay";
-};
 
 /* connected to a HUB for camera and BT */
 &usb_host1_ehci {
@@ -343,7 +338,22 @@
 };
 
 /* USB A out */
-&usb_host1_xhci {
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	dr_mode = "peripheral";
+	maximum-speed = "high-speed";
+	status = "okay";
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
 	dr_mode = "host";
 	status = "okay";
 };

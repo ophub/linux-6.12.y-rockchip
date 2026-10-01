@@ -630,10 +630,6 @@
 };
 
 /* front port */
-&usb_host0_xhci {
-	dr_mode = "host";
-	status = "okay";
-};
 
 /* left port backside */
 &usb_host1_ehci {
@@ -641,5 +637,14 @@
 };
 
 &usb_host1_ohci {
+	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	dr_mode = "host";
 	status = "okay";
 };

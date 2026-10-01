@@ -251,17 +251,11 @@
 	status = "okay";
 };
 
-&usb_host1_xhci {
-	status = "okay";
-};
 
 &usb2phy0_otg {
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	status = "okay";
-};
 
 &vop {
 	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
@@ -278,4 +272,20 @@
 		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
 		remote-endpoint = <&hdmi_in_vp0>;
 	};
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
+	status = "okay";
+};
+
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	status = "okay";
 };

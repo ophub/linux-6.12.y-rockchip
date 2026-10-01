@@ -443,9 +443,9 @@
 		pinctrl-names = "default", "pmic-sleep",
 				"pmic-power-off", "pmic-reset";
 		pinctrl-0 = <&pmic_int_l>;
-		pinctrl-1 = <&soc_slppin_slp>, <&rk809_slppin_slp>;
-		pinctrl-2 = <&soc_slppin_gpio>, <&rk809_slppin_pwrdn>;
-		pinctrl-3 = <&soc_slppin_gpio>, <&rk809_slppin_null>;
+		pinctrl-1 = <&soc_slppin_slp>;
+		pinctrl-2 = <&soc_slppin_gpio>;
+		pinctrl-3 = <&soc_slppin_gpio>;
 		rockchip,system-power-controller;
 		pmic-reset-func = <0>;
 		wakeup-source;
@@ -836,7 +836,6 @@
 		compatible = "fairchild,fusb302";
 		reg = <0x22>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&fusb0_int>;
 		int-n-gpios = <&gpio1 RK_PA2 GPIO_ACTIVE_HIGH>;
 		vbus-5v-gpios = <&gpio0 RK_PA1 GPIO_ACTIVE_LOW>;
 		status = "okay";
@@ -1046,7 +1045,6 @@
 		#size-cells = <0>;
 		tcphy0_orientation_switch: endpoint@0 {
 			reg = <0>;
-			remote-endpoint = <&usbc0_orien_sw>;
 		};
 	};
 };
@@ -1137,7 +1135,6 @@
 		#size-cells = <0>;
 		dwc3_0_role_switch: endpoint@0 {
 			reg = <0>;
-			remote-endpoint = <&usbc0_role_sw>;
 		};
 	};
 };

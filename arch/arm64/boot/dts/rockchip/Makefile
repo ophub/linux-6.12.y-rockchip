@@ -677,3 +677,11 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rv1126bp-evb-v14-dual-cam.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rv1126bp-evb1-v12.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rv1126bp-evb1-v12-fastboot-emmc.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rv1126bp-evb2-v10.dtb
+
+# Device tree overlays (overlay/Makefile)
+subdir-y	:= $(dts-dirs) overlay
+
+# The .dtbo overlays are applied on top of a base .dtb at runtime (U-Boot),
+# which resolves the overlay's __fixups__ against the __symbols__ node of that
+# base.  Emit __symbols__ in every board DTB so any base can take an overlay.
+DTC_FLAGS += -@

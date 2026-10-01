@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Guangzhou Easy EAI Technology Co., Ltd.
+ *
+ */
+
+&can0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&can0m2_pins>;
+	status = "okay";
+};

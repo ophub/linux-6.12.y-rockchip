@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Guangzhou Easy EAI Technology Co., Ltd.
+ *
+ */
+
+&spi0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0m0_pins &spi0m0_csn0 &spi0m0_csn1>;
+
+	spi_dev@0 {
+		compatible = "rockchip,spidev";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+
+	spi_dev@1 {
+		compatible = "rockchip,spidev";
+		reg = <1>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi3m0_pins &spi3m0_csn0 &spi3m0_csn1>;
+
+	spi_dev@0 {
+		compatible = "rockchip,spidev";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+
+	spi_dev@1 {
+		compatible = "rockchip,spidev";
+		reg = <1>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+};

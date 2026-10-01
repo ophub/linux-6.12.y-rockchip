@@ -1,0 +1,173 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Guangzhou Easy EAI Technology Co., Ltd.
+ *
+ */
+
+/dts-v1/;
+
+#include "rk3576-eai-core-t.dtsi"
+#include "rk3576-orin-nano-dsi-lmo8inch.dtsi"
+#include "rk3576-orin-nano-hdmi.dtsi"
+#include "rk3576-orin-nano-csi0-imx415.dtsi"
+#include "rk3576-orin-nano-csi1-imx415.dtsi"
+#include "rk3576-orin-nano-typec0.dtsi"
+#include "rk3576-orin-nano-typec1.dtsi"
+#include "rk3576-orin-nano-gmac0.dtsi"
+#include "rk3576-orin-nano-gmac1.dtsi"
+#include "rk3576-orin-nano-pcie20.dtsi"
+#include "rk3576-orin-nano-sdio-nledb37-g5nn4.dtsi"
+#include "rk3576-orin-nano-sai1-es8388.dtsi"
+#include "rk3576-orin-nano-sdmmc.dtsi"
+#include "rk3576-orin-nano-gpio-wdt.dtsi"
+#include "rk3576-orin-nano-i2c2-pcf85063.dtsi"
+
+/ {
+	model = "eai orin nano 3576";
+	compatible = "eai,orin-nano-3576", "rockchip,rk3576";
+	
+	vcc5v0_device: vcc5v0-device {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_device";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&vcc12v_dcin>;
+		//enable-active-high;
+		//gpio = <&gpio1 RK_PD3 GPIO_ACTIVE_HIGH>;
+	};
+
+	adc_keys0: adc-keys0 {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+
+		vol-up-key {
+			label = "esc";
+			linux,code = <KEY_ESC>;
+			press-threshold-microvolt = <17000>;
+		};
+	};
+
+	adc_keys: adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+
+		vol-up-key {
+			label = "volume up";
+			linux,code = <KEY_VOLUMEUP>;
+			press-threshold-microvolt = <17000>;
+		};
+	};
+
+};
+
+
+
+&spi0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0m0_pins &spi0m0_csn0 &spi0m0_csn1>;
+
+	spi_dev@0 {
+		compatible = "rockchip,spidev";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+
+	spi_dev@1 {
+		compatible = "rockchip,spidev";
+		reg = <1>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi3m0_pins &spi3m0_csn0 &spi3m0_csn1>;
+
+	spi_dev@0 {
+		compatible = "rockchip,spidev";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+
+	spi_dev@1 {
+		compatible = "rockchip,spidev";
+		reg = <1>;
+		spi-max-frequency = <12000000>;
+		spi-lsb-first;
+	};
+};
+
+&sai0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&sai0m0_lrck
+		     &sai0m0_sclk
+		     &sai0m0_sdi0
+		     &sai0m0_sdo2>;
+};
+
+&can0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&can0m2_pins>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2m0_xfer>;
+	status = "okay";
+};
+
+&i2c8 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c8m1_xfer>;
+	status = "okay";
+};
+
+&pwm2_8ch_3 {
+	pinctrl-0 = <&pwm2m1_ch3>;
+	assigned-clocks = <&cru CLK_PWM2>;
+	assigned-clock-rates = <100000000>;
+	status = "okay";
+};
+
+&pwm2_8ch_6 {
+	pinctrl-0 = <&pwm2m0_ch6>;
+	assigned-clocks = <&cru CLK_PWM2>;
+	assigned-clock-rates = <100000000>;
+	status = "okay";
+};
+
+// Raspberry
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4m2_xfer>;
+	status = "okay";
+};
+
+&uart8 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart8m1_xfer>;
+	status = "okay";
+};
+
+// Other 
+&uart10 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart10m1_xfer>;
+	status = "okay";
+};
+

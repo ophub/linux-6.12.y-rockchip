@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Guangzhou Easy EAI Technology Co., Ltd.
+ *
+ */
+
+/ {
+	gpio-wdt {
+		pinctrl-names = "default";
+		pinctrl-0 = <&wdt_feed_pin>;
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio1 RK_PD3 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1600>;
+		always-running;
+	};
+};
+
+&pinctrl {
+	watchdog {
+		wdt_feed_pin: wdt-feed-pin {
+			rockchip,pins = <1 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};

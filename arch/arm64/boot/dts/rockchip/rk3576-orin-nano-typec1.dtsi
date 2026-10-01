@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Guangzhou Easy EAI Technology Co., Ltd.
+ *
+ */
+
+/ {
+	vcc5v0_host_b: vcc5v0-host-b {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_host_b";
+		//regulator-boot-on;
+		//regulator-always-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio3 RK_PD6 GPIO_ACTIVE_HIGH>;
+		vin-supply = <&vcc5v0_device>;
+		//pinctrl-names = "default";
+		//pinctrl-0 = <&usb_host_b_pwren>;
+	};
+};
+
+/* PHY */
+&u2phy1 {
+	status = "okay";
+};
+
+&u2phy1_otg {
+	status = "okay";
+	phy-supply = <&vcc5v0_host_b>;
+};
+
+&combphy1_psu {
+	status = "okay";
+};
+
+/* 控制器 */
+&usb_drd1_dwc3 {
+	dr_mode = "host";
+	maximum-speed = "super-speed";
+	status = "okay";
+};
+/*
+&pinctrl {
+	usb {
+		usb_host_a_pwren: usb-host-a-pwren {
+			rockchip,pins = <3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+		usb_host_b_pwren: usb-host-b-pwren {
+			rockchip,pins = <3 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};	
+};
+*/

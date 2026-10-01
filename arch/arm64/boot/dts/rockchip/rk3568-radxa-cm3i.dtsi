@@ -403,3 +403,11 @@
 	status = "okay";
 };
 
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	extcon = <&usb2phy0>;
+};

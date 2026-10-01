@@ -698,3 +698,21 @@
 	status = "okay";
 };
 
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	dr_mode = "otg";
+	status = "okay";
+};
+
+&usbhost30 {
+	status = "okay";
+};
+
+&usbhost_dwc3 {
+	dr_mode = "host";
+	status = "okay";
+};

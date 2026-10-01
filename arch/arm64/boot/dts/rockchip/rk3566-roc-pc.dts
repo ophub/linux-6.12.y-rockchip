@@ -675,3 +675,19 @@
 	status = "okay";
 };
 
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	status = "okay";
+};
+
+&usbhost30 {
+	status = "okay";
+};
+
+&usbhost_dwc3 {
+	status = "okay";
+};

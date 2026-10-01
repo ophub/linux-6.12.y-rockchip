@@ -845,3 +845,20 @@
 
 &vp0 {
 };
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	extcon = <&usb2phy0>;
+	status = "okay";
+};
+
+&usbhost30 {
+	status = "okay";
+};
+
+&usbhost_dwc3 {
+	status = "okay";
+};

@@ -235,3 +235,11 @@
 	phy-supply = <&vcc3v3_ngff>;
 	status = "okay";
 };
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	status = "okay";
+};

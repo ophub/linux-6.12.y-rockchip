@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 https://github.com/YukMingLaw
+ * Device Tree for CD1000 Cloud Computer Box
+ * Based on MangoPi M28K device tree
+ */
+
+#include "rk3528-mangopi-m28k.dts"
+
+/ {
+	model = "CD1000 Cloud Computer Box";
+	compatible = "rockchip,cd1000", "rockchip,rk3528";
+
+	aliases {
+		ethernet0 = &gmac0;
+	};
+
+	/* USB Host port 5V power (GPIO4_B5, from Android DTB) */
+	vcc5v0_host: vcc5v0-host-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_host";
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio4 RK_PB5 GPIO_ACTIVE_HIGH>;
+		vin-supply = <&vcc5v0_sys>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_host_en>;
+	};
+
+	/* USB OTG port 5V power (GPIO4_C1, from Android DTB) */
+	vcc5v0_otg: vcc5v0-otg-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_otg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio4 RK_PC1 GPIO_ACTIVE_HIGH>;
+		vin-supply = <&vcc5v0_sys>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_otg_en>;
+	};
+};
+
+/*
+ * Override M28K LEDs: GPIO4_B5 is used for USB host power on CD1000,
+ * remove conflicting amber LED and its pinctrl reference.
+ */
+&leds {
+	pinctrl-0 = <&led_green_en>, <&led_blue_en>;
+	/delete-node/ lan;
+};
+
+/* Disable M28K Gigabit Ethernet (ethernet@ffbe0000) */
+&gmac1 {
+	status = "disabled";
+};
+
+/* Enable CD1000 100M Ethernet using RK3528 integrated PHY (ethernet@ffbd0000) */
+&gmac0 {
+	phy-mode = "rmii";
+	clock_in_out = "output";
+	status = "okay";
+};
+
+/* USB2 PHY: connect power supplies (from Android DTB) */
+&u2phy_host {
+	phy-supply = <&vcc5v0_host>;
+};
+
+&u2phy_otg {
+	vbus-supply = <&vcc5v0_otg>;
+};
+
+/*
+ * DWC3 OTG: switch to USB2.0-only mode matching Android DTB.
+ * Android only uses u2phy_otg (no USB3 phy), limits to high-speed,
+ * and adds USB2 suspend PHY quirk workarounds.
+ */
+&usbdrd_dwc3 {
+	phys = <&u2phy_otg>;
+	phy-names = "usb2-phy";
+	maximum-speed = "high-speed";
+	snps,dis_u2_susphy_quirk;
+	snps,usb2-lpm-disable;
+};
+
+/* USB pinctrl for VBUS power control GPIOs */
+&pinctrl {
+	usb {
+		vcc5v0_host_en: vcc5v0-host-en {
+			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		vcc5v0_otg_en: vcc5v0-otg-en {
+			rockchip,pins = <4 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+};

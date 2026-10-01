@@ -6,12 +6,27 @@ documentation file, it is not referenced by the build.
 
 ## Deferred boards
 
-| board | reason | how to finish it |
-|---|---|---|
-| `rk3588s-orangepi-5b.dts` | This file (identical in both trees) only adds `&wireless_bluetooth { status = "okay"; }` and `&wireless_wlan { status = "okay"; }` on top of `rk3588s-orangepi-5.dts`. The 6.12 tree ships the *mainline* version of `rk3588s-orangepi-5.dts`, which does not define those wireless regulator nodes at all (the 6.1 BSP version does). Enabling the board would therefore drop the WiFi/Bluetooth power rails, and a faithful port has to bring over the `wireless-bluetooth` / `wireless-wlan` regulator nodes **and** their dependent pinctrl nodes (`bt_gpio`, `wifi_host_wake_irq`, `wifi_poweren_gpio`, `uart9m2_rtsn`, `uart9_gpios`) plus the `hym8563` RTC node. | Port the two regulators and their pinctrl/RTC dependencies from the 6.1 `rk3588s-orangepi-5.dts` into the 6.12 one, then re-add `rk3588s-orangepi-5b.dtb` to the Makefile. |
+None outstanding - every 6.1 board now has a building `.dtb`/`.dtbo` in 6.12.
 
-The source file `rk3588s-orangepi-5b.dts` is already present in the tree, only
-its `dtb-` entry is intentionally missing.
+### Previously deferred, now resolved
+
+* `rk3588s-orangepi-5b.dts` - the board file only adds
+  `&wireless_bluetooth { status = "okay"; }` and
+  `&wireless_wlan { status = "okay"; }` on top of `rk3588s-orangepi-5.dts`,
+  but 6.12 shipped the *mainline* `rk3588s-orangepi-5.dts`, which lacks those
+  wireless regulator nodes entirely.  Resolved by porting the two regulators
+  (`wireless_bluetooth`, `wireless_wlan`) and their dependencies into the 6.12
+  `rk3588s-orangepi-5.dts`:
+
+  * pinctrl groups `uart9_gpios`, `bt_gpio` (wireless-bluetooth) and
+    `wifi_host_wake_irq`, `wifi_poweren_gpio` (wireless-wlan);
+  * the `hym8563` RTC was already present in the 6.12 file and is used as
+    `clocks = <&hym8563>` by `wireless_bluetooth`.
+
+  `rk3588s-orangepi-5b.dtb` was then re-added to the Makefile in ASCII order.
+  Verified: `make ... dtbs` builds the DTB with no warnings, and the resulting
+  blob has `/wireless-bluetooth` and `/wireless-wlan` both at the root node
+  with `status = "okay"`.
 
 ## Adaptation rules applied during the migration
 

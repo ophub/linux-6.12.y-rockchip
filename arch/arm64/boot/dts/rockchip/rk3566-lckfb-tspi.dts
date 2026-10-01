@@ -59,7 +59,6 @@
 
 		port {
 			hdmi_con_in: endpoint {
-				remote-endpoint = <&hdmi_out_con>;
 			};
 		};
 	};
@@ -161,11 +160,11 @@
 	};
 };
 
-&combphy1 {
+&combphy1_usq {
 	status = "okay";
 };
 
-&combphy2 {
+&combphy2_psq {
 	status = "okay";
 };
 
@@ -196,17 +195,7 @@
 	status = "okay";
 };
 
-&hdmi_in {
-	hdmi_in_vp0: endpoint {
-		remote-endpoint = <&vp0_out_hdmi>;
-	};
-};
 
-&hdmi_out {
-	hdmi_out_con: endpoint {
-		remote-endpoint = <&hdmi_con_in>;
-	};
-};
 
 &hdmi_sound {
 	status = "okay";
@@ -661,10 +650,6 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	dr_mode = "otg";
-	status = "okay";
-};
 
 &usb_host1_ohci {
 	status = "okay";
@@ -674,10 +659,6 @@
 	status = "okay";
 };
 
-&usb_host1_xhci {
-	dr_mode = "host";
-	status = "okay";
-};
 
 &usb2phy0 {
 	status = "okay";
@@ -697,12 +678,12 @@
 	status = "okay";
 };
 
-&usb2phy1_host {
+&u2phy1_host {
 	phy-supply = <&vcc5v0_host>;
 	status = "okay";
 };
 
-&usb2phy1_otg {
+&u2phy1_otg {
 	phy-supply = <&vcc5v0_host>;
 	status = "okay";
 };
@@ -717,9 +698,3 @@
 	status = "okay";
 };
 
-&vp0 {
-	vp0_out_hdmi: endpoint@ROCKCHIP_VOP2_EP_HDMI0 {
-		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
-		remote-endpoint = <&hdmi_in_vp0>;
-	};
-};

@@ -60,3 +60,33 @@ make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=aarch64-linux-gnu-gcc \
 
 This is the same `dtbs` step that `/usr/src/make-kernel.sh` runs before the full
 kernel build.
+
+## Device tree overlays (dtbo)
+
+The 335 overlays of the 6.1 BSP were migrated on top of the mainline dtbs rules
+that this tree carries:
+
+* Sources were renamed from `.dts` to `.dtso`, because
+  `scripts/Makefile.dtbs` only matches `$(obj)/%.dtbo: $(src)/%.dtso` (the 6.1
+  BSP patched its older `scripts/Makefile.lib` to also accept `.dts`).
+* `arch/arm64/boot/dts/rockchip/Makefile` gained
+  `subdir-y := $(dts-dirs) overlay`, which was missing here.
+* `overlay/Makefile` registers the blobs as
+  `dtb-$(CONFIG_ARCH_ROCKCHIP) += <name>.dtbo` (the 6.1 BSP used a separate
+  `dtbo-` variable driven through `always-y`).  Its `scr-` and `dtbotxt-`
+  entries were dropped on purpose: this tree's `scripts/Makefile.dtbs` no
+  longer contains the `%.scr` rule and has no `dtbotxt` handling.
+* Overlays that `#include` a sibling overlay were kept working by updating those
+  include directives to the new `.dtso` names.
+* `include/dt-bindings/power/rk3576-power.h` was restored from the 6.1 tree.
+
+`__symbols__`: an overlay is a `/plugin/` fragment, so `target = <&label>`
+becomes a `__fixups__` entry that has to be resolved against the base DTB.  That
+happens either at build time through the `<target>-dtbs` mechanism of
+`scripts/Makefile.dtbs` (which already appends `-@` for `base-dtb-y`) or at
+runtime by the bootloader.  For the runtime path every board DTB has to carry
+`__symbols__`, so the rockchip Makefile sets `DTC_FLAGS += -@`.
+
+Verified: all 335 `.dtbo` build, and `scripts/dtc/fdtoverlay` applies them onto
+matching base DTBs (rk3588-rock-5b-plus, rk3588-rock-5b,
+rk3588-evb1-lp4-v10-dsi-dsc-MV2100UZ1, ...) with exit code 0.

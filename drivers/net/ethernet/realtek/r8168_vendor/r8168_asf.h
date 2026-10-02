@@ -5,7 +5,7 @@
 # r8168 is the Linux device driver released for Realtek Gigabit Ethernet
 # controllers with PCI-Express interface.
 #
-# Copyright(c) 2024 Realtek Semiconductor Corp. All rights reserved.
+# Copyright(c) 2025 Realtek Semiconductor Corp. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -31,6 +31,9 @@
  *  This product is covered by one or more of the following patents:
  *  US6,570,884, US6,115,776, and US6,327,625.
  ***********************************************************************************/
+
+#ifndef R8168_ASF_H
+#define R8168_ASF_H
 
 #define SIOCDEVPRIVATE_RTLASF   SIOCDEVPRIVATE
 
@@ -280,16 +283,17 @@ struct asf_ioctl_struct {
 int rtl8168_asf_ioctl(struct net_device *dev, struct ifreq *ifr);
 void rtl8168_asf_hbperiod(struct rtl8168_private *tp, int arg, unsigned int *data);
 void rtl8168_asf_wd16rst(struct rtl8168_private *tp, int arg, unsigned int *data);
-void rtl8168_asf_console_mac(struct rtl8168_private *, int arg, unsigned int *data);
-void rtl8168_asf_ip_address(struct rtl8168_private *, int arg, int offset, unsigned int *data);
+void rtl8168_asf_console_mac(struct rtl8168_private *tp, int arg, unsigned int *data);
+void rtl8168_asf_ip_address(struct rtl8168_private *tp, int arg, int offset, unsigned int *data);
 void rtl8168_asf_config_regs(struct rtl8168_private *tp, int arg, int offset, unsigned int *data);
 void rtl8168_asf_capability_masks(struct rtl8168_private *tp, int arg, int offset, unsigned int *data);
 void rtl8168_asf_community_string(struct rtl8168_private *tp, int arg, char *string);
 void rtl8168_asf_community_string_len(struct rtl8168_private *tp, int arg, unsigned int *data);
-void rtl8168_asf_alert_resend_interval(struct rtl8168_private *tp, int arg, unsigned int *data);
 void rtl8168_asf_time_period(struct rtl8168_private *tp, int arg, int offset, unsigned int *data);
-void rtl8168_asf_key_access(struct rtl8168_private *, int arg, int offset, unsigned int *data);
+void rtl8168_asf_key_access(struct rtl8168_private *tp, int arg, int offset, unsigned int *data);
 void rtl8168_asf_rw_hexadecimal(struct rtl8168_private *tp, int arg, int offset, int len, unsigned int *data);
 void rtl8168_asf_rw_iana(struct rtl8168_private *tp, int arg, unsigned int *data);
 void rtl8168_asf_rw_uuid(struct rtl8168_private *tp, int arg, unsigned int *data);
 void rtl8168_asf_rw_systemid(struct rtl8168_private *tp, int arg, unsigned int *data);
+
+#endif /* R8168_ASF_H */

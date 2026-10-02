@@ -5,7 +5,7 @@
 # r8168 is the Linux device driver released for Realtek Gigabit Ethernet
 # controllers with PCI-Express interface.
 #
-# Copyright(c) 2024 Realtek Semiconductor Corp. All rights reserved.
+# Copyright(c) 2025 Realtek Semiconductor Corp. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -139,7 +139,7 @@ static bool rtl8168_fw_data_ok(struct rtl8168_fw *rtl_fw)
                         break;
 
                 case PHY_BJMPN:
-                        if (regno > index)
+                        if (regno >= index)
                                 goto out;
                         break;
                 case PHY_READCOUNT_EQ_SKIP:

@@ -5,7 +5,7 @@
 # r8168 is the Linux device driver released for Realtek Gigabit Ethernet
 # controllers with PCI-Express interface.
 #
-# Copyright(c) 2024 Realtek Semiconductor Corp. All rights reserved.
+# Copyright(c) 2025 Realtek Semiconductor Corp. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -32,10 +32,14 @@
  *  US6,570,884, US6,115,776, and US6,327,625.
  ***********************************************************************************/
 
-//EEPROM opcodes
-#define RTL_EEPROM_READ_OPCODE      06
-#define RTL_EEPROM_WRITE_OPCODE     05
-#define RTL_EEPROM_ERASE_OPCODE     07
+#ifndef RTL_EEPROM_H
+#define RTL_EEPROM_H
+
+
+/* EEPROM opcodes */
+#define RTL_EEPROM_READ_OPCODE      6
+#define RTL_EEPROM_WRITE_OPCODE     5
+#define RTL_EEPROM_ERASE_OPCODE     7
 #define RTL_EEPROM_EWEN_OPCODE      19
 #define RTL_EEPROM_EWDS_OPCODE      16
 
@@ -52,5 +56,4 @@ void rtl8168_lower_clock(struct rtl8168_private *tp, u8 *x);
 void rtl8168_stand_by(struct rtl8168_private *tp);
 void rtl8168_set_eeprom_sel_low(struct rtl8168_private *tp);
 
-
-
+#endif /* RTL_EEPROM_H */

@@ -70,6 +70,9 @@ CONFIG_RADAR_OR_IR_DETECT = n
 CONFIG_DOWNLOAD_FW = n
 CONFIG_RFTEST = y
 CONFIG_USB_BT = y
+# Keep CONFIG_SDIO_BT disabled: aic_btsdio.c ships its own HCI core and
+# private copies of hci.h/hci_core.h which cannot coexist with the in-tree
+# Bluetooth stack.  See ../MIGRATION-NOTES.md.
 CONFIG_SDIO_BT = n
 CONFIG_USE_5G ?= y
 CONFIG_CREATE_TRACE_POINTS = n

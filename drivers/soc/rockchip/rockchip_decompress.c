@@ -473,7 +473,14 @@ static const struct attribute_group decom_attr_group = {
 };
 #endif
 
-static int __init rockchip_decom_probe(struct platform_device *pdev)
+/*
+ * Not __init: this probe is referenced by the always-present .data driver
+ * structure and, when CONFIG_ROCKCHIP_THUNDER_BOOT is disabled, the driver is
+ * registered with platform_driver_register() so the probe may be called long
+ * after the init sections have been discarded.  Keeping it out of .init.text
+ * also fixes the modpost section-mismatch warning.
+ */
+static int rockchip_decom_probe(struct platform_device *pdev)
 {
 	struct rk_decom *rk_dec;
 	struct resource *res = NULL;

@@ -49,6 +49,23 @@
 #include <dhd_pcie.h>
 #include <dhd_config.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+uint8
+dhd_num_prio_supported_per_flow_ring(dhd_pub_t *dhdp);
+uint8
+dhd_get_max_multi_client_flow_rings(dhd_pub_t *dhdp);
+int
+dhd_flowid_map_init(dhd_pub_t *dhdp, uint16 max_tx_flow_rings);
+void
+dhd_flowid_map_deinit(dhd_pub_t *dhdp);
+bool is_tdls_destination(dhd_pub_t *dhdp, uint8 *da);
+
+
 static INLINE int dhd_flow_queue_throttle(flow_queue_t *queue);
 
 static INLINE uint16 dhd_flowid_find(dhd_pub_t *dhdp, uint8 ifindex,

@@ -89,6 +89,17 @@
 #endif /* WL_CELLULAR_CHAN_AVOID */
 #include <dhd_config.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+struct net_device *
+wl_get_scan_ndev(struct bcm_cfg80211 *cfg);
+void wl_notify_scan_done(struct bcm_cfg80211 *cfg, bool aborted);
+
+
 #define ACTIVE_SCAN 1
 #define PASSIVE_SCAN 0
 

@@ -38,6 +38,19 @@
 #include <wl_android.h>
 #endif
 #include <dhd_plat.h>
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void wifi_ctrlfunc_unregister_drv(void);
+char* __attribute__ ((weak)) dhd_get_device_dt_name(void);
+int
+__attribute__ ((weak)) dhd_get_platform_naming_for_nvram_clmblob_file(download_type_t component,
+	char *file_name);
+
 #if defined(CONFIG_WIFI_CONTROL_FUNC)
 #include <linux/wlan_plat.h>
 #endif /* CONFIG_WIFI_CONTROL_FUNC */

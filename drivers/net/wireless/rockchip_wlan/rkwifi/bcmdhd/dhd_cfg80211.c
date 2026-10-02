@@ -31,6 +31,16 @@
 #include <wl_cfg80211.h>
 #include <dhd_cfg80211.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+struct net_device * dhd_cfg80211_netdev_free(struct net_device *ndev);
+void dhd_netdev_free(struct net_device *ndev);
+
+
 #ifdef PKT_FILTER_SUPPORT
 #include <dngl_stats.h>
 #include <dhd.h>

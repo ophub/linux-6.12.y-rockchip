@@ -482,6 +482,21 @@ wl_escan_remove_lowRSSI_info(struct net_device *dev, struct wl_escan_info *escan
 }
 #endif /* ESCAN_BUF_OVERFLOW_MGMT */
 
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void
+wl_escan_ext_handler(struct net_device *dev, void *argu,
+	const wl_event_msg_t *e, void *data);
+int
+wl_escan_merge_scan_list(struct net_device *dev, u8 *cur_bssid,
+	struct iw_request_info *info, struct iw_point *dwrq, char *extra,
+	int *len_ret, int *bss_cnt);
+
 void
 wl_escan_ext_handler(struct net_device *dev, void *argu,
 	const wl_event_msg_t *e, void *data)

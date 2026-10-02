@@ -69,6 +69,37 @@
 #endif /* DHD_PKT_LOGGING */
 #include <wl_cfgvendor.h>
 #include <brcm_nl80211.h>
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+int wl_android_get_80211_mode(struct net_device *dev, char *command, int total_len);
+int wl_android_get_chanspec(struct net_device *dev, char *command, int total_len);
+int wl_android_get_datarate(struct net_device *dev, char *command, int total_len);
+int wl_android_get_assoclist(struct net_device *dev, char *command, int total_len);
+s32
+wl_android_get_freq_list_chanspecs(struct net_device *ndev, wl_uint32_list_t *list,
+	s32 buflen, const char* cmd_str, int sta_channel, chanspec_band_t sta_acs_band);
+s32
+wl_android_get_best_channels(struct net_device *dev, char* cmd, int total_len);
+int wl_android_set_roam_mode(struct net_device *dev, char *command);
+int wl_android_set_ibss_beacon_ouidata(struct net_device *dev, char *command, int total_len);
+int wl_keep_alive_set(struct net_device *dev, char* extra);
+int
+wl_android_get_rssi_per_ant(struct net_device *dev, char *command, int total_len);
+int
+wl_android_set_rssi_logging(struct net_device *dev, char *command, int total_len);
+int
+wl_android_get_rssi_logging(struct net_device *dev, char *command, int total_len);
+int
+wl_android_get_snr(struct net_device *dev, char *command, int total_len);
+int
+wl_android_set_wsec_info(struct net_device *dev, char *command);
+int wl_fatal_error(void * wl, int rc);
+
 #ifdef WL_MBO
 #include <mbo.h>
 #endif /* WL_MBO */

@@ -71,6 +71,44 @@
 #include <dhd_config.h>
 #include <wl_android.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+uint wl_get_port_num(wl_io_pport_t *io_pport);
+int
+dhd_mem_debug(dhd_pub_t *dhd, uchar *msg, uint msglen);
+int
+dhd_flow_ring_debug(dhd_pub_t *dhd, char *msg, uint msglen);
+int
+wl_event_process_default(wl_event_msg_t *event, struct wl_evt_pport *evt_pport);
+int
+wl_event_process(dhd_pub_t *dhd_pub, int *ifidx, void *pktdata,
+	uint pktlen, void **data_ptr, void *raw_event);
+int
+pattern_atoh_len(char *src, char *dst, int len);
+int
+wl_iw_parse_data_tlv(char** list_str, void *dst, int dst_size, const char token,
+                     int input_size, int *bytes_left);
+int
+wl_iw_parse_channel_list_tlv(char** list_str, uint16* channel_list,
+                             int channel_num, int *bytes_left);
+int
+wl_iw_parse_ssid_list(char** list_str, wlc_ssid_t* ssid, int idx, int max);
+int
+wl_iw_parse_channel_list(char** list_str, uint16* channel_list, int channel_num);
+int
+dhd_download_2_dongle(dhd_pub_t	*dhd, char *iovar, uint16 flag, uint16 dload_type,
+	unsigned char *dload_buf, int len);
+int
+dhd_check_current_clm_data(dhd_pub_t *dhd);
+int
+dhd_create_ecounters_params(dhd_pub_t *dhd, uint16 type, uint16 if_slice_idx,
+	uint16 stats_rep, uint8 **xtlv);
+
+
 #ifdef WL_CFG80211
 #include <wl_cfg80211.h>
 #include <wl_cfgvif.h>

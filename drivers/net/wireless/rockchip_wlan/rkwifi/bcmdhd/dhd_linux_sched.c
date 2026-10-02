@@ -28,6 +28,16 @@
 #include <typedefs.h>
 #include <linuxver.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+int setScheduler(struct task_struct *p, int policy, struct sched_param *param);
+int get_scheduler_policy(struct task_struct *p);
+
+
 int setScheduler(struct task_struct *p, int policy, struct sched_param *param)
 {
 	int rc = 0;

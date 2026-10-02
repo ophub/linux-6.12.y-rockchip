@@ -1552,6 +1552,20 @@ wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len)
 #ifndef WL_ESCAN
 static
 #endif
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+int
+wl_iw_handle_scanresults_ies(char **event_p, char *end,
+	struct iw_request_info *info, wl_bss_info_v109_t *bi);
+void
+wl_iw_event(struct net_device *dev, void *argu,
+	const wl_event_msg_t *e, void* data);
+
 int
 wl_iw_handle_scanresults_ies(char **event_p, char *end,
 	struct iw_request_info *info, wl_bss_info_v109_t *bi)

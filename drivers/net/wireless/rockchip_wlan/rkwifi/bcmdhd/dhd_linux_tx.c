@@ -161,6 +161,20 @@
 #endif
 #include <dhd_config.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void
+dhd_tx_stop_queues(struct net_device *net);
+void
+dhd_tx_start_queues(struct net_device *net);
+netdev_tx_t
+BCMFASTPATH(dhd_start_xmit)(struct sk_buff *skb, struct net_device *net);
+
+
 #define WME_PRIO2AC(prio)  wme_fifo2ac[prio2fifo[(prio)]]
 
 void

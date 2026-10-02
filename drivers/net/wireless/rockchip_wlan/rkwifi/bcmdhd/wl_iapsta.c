@@ -2271,6 +2271,31 @@ wl_ext_sta_connecting(struct net_device *dev)
 	return connecting;
 }
 
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+bool
+wl_ext_sta_handshaking(struct net_device *dev);
+s32
+wl_ext_add_del_bss(struct net_device *ndev, s32 bsscfg_idx,
+	int iftype, s32 del, u8 *addr);
+int
+wl_iapsta_suspend_resume_ap(dhd_pub_t *dhd, struct wl_if_info *cur_if,
+	int suspend);
+void
+wl_ext_iapsta_link(struct wl_if_info *cur_if,
+	const wl_event_msg_t *e, void *data);
+void
+wl_ext_iapsta_event(struct net_device *dev, void *argu,
+	const wl_event_msg_t *e, void *data);
+int
+wl_ext_isam_dev_status(struct net_device *dev, ifmode_t ifmode, char prefix,
+	char *dump_buf, int dump_len);
+
 bool
 wl_ext_sta_handshaking(struct net_device *dev)
 {

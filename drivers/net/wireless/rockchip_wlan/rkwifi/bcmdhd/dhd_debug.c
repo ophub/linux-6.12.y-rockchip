@@ -38,6 +38,18 @@
 #include <event_log.h>
 #include <event_trace.h>
 #include <msgtrace.h>
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void
+dhd_dbg_set_event_log_tag(dhd_pub_t *dhdp, uint16 tag, uint8 set_num, uint8 is_set);
+void print_roam_chan_list(char *prefix, uint chan_num, uint16 band_2g,
+	uint16 uni2a, uint8 uni3, uint8 *uni2c);
+
 #if defined(DBG_PKT_MON)
 #include <dhd_linux_priv.h>
 #include <dhd_linux_wq.h>

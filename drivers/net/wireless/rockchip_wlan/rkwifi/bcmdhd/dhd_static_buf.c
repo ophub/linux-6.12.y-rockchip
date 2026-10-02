@@ -6,6 +6,24 @@
 #include <linux/err.h>
 #include <linux/skbuff.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void *
+dhd_wlan_mem_prealloc(
+#if defined(BCMDHD_MDRIVER) && !defined(DHD_STATIC_IN_DRIVER)
+	uint bus_type, int index,
+#endif
+	int section, unsigned long size);
+#ifdef DHD_STATIC_IN_DRIVER
+int dhd_static_buf_init(void);
+void dhd_static_buf_exit(void);
+#endif
+
+
 #define	DHD_STATIC_VERSION_STR		"101.10.361.36 (wlan=r892223-20231107-1)"
 #define STATIC_ERROR_LEVEL	BIT(0)
 #define STATIC_TRACE_LEVEL	BIT(1)

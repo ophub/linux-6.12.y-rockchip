@@ -893,8 +893,9 @@ sb_core_disable(const si_t *sih, uint32 bits)
 	BCM_REFERENCE(dummy);
 	OSL_DELAY(1);
 	SPINWAIT((R_SBREG(sii, &sb->sbtmstatehigh) & SBTMH_BUSY), 100000);
-	if (R_SBREG(sii, &sb->sbtmstatehigh) & SBTMH_BUSY)
+	if (R_SBREG(sii, &sb->sbtmstatehigh) & SBTMH_BUSY) {
 		SI_ERROR(("sb_core_disable: target state still busy\n"));
+	}
 
 	/*
 	 * If core is initiator, set the Reject bit and allow Busy to clear.

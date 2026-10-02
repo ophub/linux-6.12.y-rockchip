@@ -156,6 +156,23 @@ void update_roam_cache(struct bcm_cfg80211 *cfg, int ioctl_ver)
 	WL_DBG(("%d AP, %d cache item(s), err=%d\n", n_roam_cache, channel_list.n, error));
 }
 
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void set_roam_band(int band);
+void reset_roam_cache(struct bcm_cfg80211 *cfg);
+void
+add_roam_cache(struct bcm_cfg80211 *cfg, wl_bss_info_v109_t *bi);
+int get_roam_channel_list(struct bcm_cfg80211 *cfg, chanspec_t target_chan,
+	chanspec_t *channels, int n_channels, const wlc_ssid_t *ssid, int ioctl_ver);
+int init_roam_cache(struct bcm_cfg80211 *cfg, int ioctl_ver);
+void print_roam_cache(struct bcm_cfg80211 *cfg);
+void wl_update_roamscan_cache_by_band(struct net_device *dev, int band);
+
 void set_roam_band(int band)
 {
 	roam_band = band;

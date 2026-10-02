@@ -25,6 +25,23 @@
 #include <dngl_stats.h>
 #include <dhd.h>
 #include <dhd_config.h>
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+int
+wl_ext_mkeep_alive(struct net_device *dev, char *data, char *command,
+	int total_len);
+int
+wl_ext_conf_iovar(struct net_device *dev, char *command, int total_len);
+int
+wl_ext_get_distance(struct net_device *net, u32 band);
+int
+wl_ext_fw_apcs(struct net_device *dev, uint32 band, wl_scan_info_t *scan_info);
+
 #ifdef WL_CFG80211
 #include <wl_cfg80211.h>
 #endif /* WL_CFG80211 */

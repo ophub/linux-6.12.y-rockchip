@@ -1747,6 +1747,68 @@ dhd_sta_pool_clear(dhd_pub_t *dhdp, int max_sta)
 	}
 }
 
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+dhd_sta_t *
+__dhd_find_sta(dhd_if_t *ifp, void *pub, int ifidx, void *ea);
+dhd_sta_t *
+__dhd_add_sta(dhd_if_t *ifp, void *pub, int ifidx, void *ea);
+dhd_sta_t *
+dhd_add_sta(void *pub, int ifidx, void *ea);
+void
+dhd_set_packet_filter(dhd_pub_t *dhd);
+uint8 *
+dhd_bssidx2bssid(dhd_pub_t *dhdp, int idx);
+int
+_dhd_set_mac_address(dhd_info_t *dhd, int ifidx, uint8 *addr, bool skip_stop);
+int32 dhd_role_to_nl80211_iftype(int32 role);
+int dhd_sendup(dhd_pub_t *dhdp, int ifidx, void *p);
+void dhd_dpc_enable(dhd_pub_t *dhdp);
+void
+dhd_dpc_kill(dhd_pub_t *dhdp);
+void
+dhd_dpc_tasklet_kill(dhd_pub_t *dhdp);
+void dhd_set_scb_probe(dhd_pub_t *dhd);
+void
+dhd_force_collect_socram_during_wifi_onoff(dhd_pub_t *dhdp);
+void
+dhd_force_collect_init_fail_dumps(dhd_pub_t *dhdp);
+int
+dhd_open(struct net_device *net);
+bool
+dhd_is_static_ndev(dhd_pub_t *dhdp, struct net_device *ndev);
+int _dhd_tdls_enable(dhd_pub_t *dhd, bool tdls_on, bool auto_on, struct ether_addr *mac);
+int
+dhd_optimised_preinit_ioctls(dhd_pub_t * dhd);
+int
+dhd_legacy_preinit_ioctls(dhd_pub_t *dhd);
+int dhd_change_mtu(dhd_pub_t *dhdp, int new_mtu, int ifidx);
+void
+dhd_bus_detach(dhd_pub_t *dhdp);
+int rockchip_wifi_init_module_rkwifi(void);
+void rockchip_wifi_exit_module_rkwifi(void);
+int
+dhd_dev_init_ioctl(struct net_device *dev);
+int write_file(const char * file_name, uint32 flags, uint8 *buf, int size);
+int
+write_dump_to_file(dhd_pub_t *dhd, uint8 *buf, int size, char *fname);
+int net_os_wake_lock_ctrl_timeout_enable(struct net_device *dev, int val);
+int dhd_ioctl_entry_local(struct net_device *net, wl_ioctl_t *ioc, int cmd);
+char*
+dhd_dbg_get_system_timestamp(void);
+char*
+dhd_log_dump_get_timestamp(void);
+void
+dmaxfer_free_dmaaddr_handler(void *handle, void *event_info, u8 event);
+void
+dhd_print_kirqstats(dhd_pub_t *dhd, unsigned int irq_num);
+void *dhd_get_conf(struct net_device *dev);
+
 /*
  * Lockless variant of dhd_find_sta()
  * Find STA with MAC address ea in an interface's STA list.

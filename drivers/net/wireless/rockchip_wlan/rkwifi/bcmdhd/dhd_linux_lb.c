@@ -601,6 +601,27 @@ void dhd_lb_stats_deinit(dhd_pub_t *dhdp)
 	return;
 }
 
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void dhd_lb_stats_dump_napi_latency(dhd_pub_t *dhdp,
+	struct bcmstrbuf *strbuf, uint64 *napi_latency);
+void dhd_lb_stats_dump_histo(dhd_pub_t *dhdp,
+	struct bcmstrbuf *strbuf, uint32 **hist);
+void dhd_lb_stats_dump_cpu_array(struct bcmstrbuf *strbuf, uint32 *p);
+void dhd_lb_stats_update_napi_latency(uint64 *bin, uint32 latency);
+void dhd_lb_stats_update_histo(uint32 **bin, uint32 count, uint32 cpu);
+void
+dhd_rx_emerge_enqueue(dhd_pub_t *dhdp, void *pkt);
+void *
+dhd_rx_emerge_dequeue(dhd_pub_t *dhdp);
+bool
+dhd_lb_tx_process(dhd_info_t *dhd);
+
 void dhd_lb_stats_dump_napi_latency(dhd_pub_t *dhdp,
 	struct bcmstrbuf *strbuf, uint64 *napi_latency)
 {

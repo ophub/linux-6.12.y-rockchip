@@ -94,6 +94,18 @@
 #include "sbhndarm.h"
 #include <hndchipc.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+uint32
+BCMPOSTTRAPFN(si_clear_backplane_to)(si_t *sih);
+void
+si_slave_wrapper_add(si_t *sih);
+
+
 #ifdef SECI_UART
 /* Defines the set of GPIOs to be used for SECI UART if not specified in NVRAM */
 /* For further details on each ppin functionality please refer to PINMUX table in
@@ -2885,12 +2897,13 @@ si_doattach(si_info_t *sii, uint devid, osl_t *osh, volatile void *regs,
 			(CHIPTYPE(sii->pub.socitype) == SOCI_NAI) ||
 			(CHIPTYPE(sii->pub.socitype) == SOCI_DVTBUS)) {
 
-			if (CHIPTYPE(sii->pub.socitype) == SOCI_AI)
+			if (CHIPTYPE(sii->pub.socitype) == SOCI_AI) {
 				SI_MSG(("Found chip type AI (0x%08x)\n", w));
-			else if (CHIPTYPE(sii->pub.socitype) == SOCI_NAI)
+			} else if (CHIPTYPE(sii->pub.socitype) == SOCI_NAI) {
 				SI_MSG(("Found chip type NAI (0x%08x)\n", w));
-			else
+			} else {
 				SI_MSG(("Found chip type DVT (0x%08x)\n", w));
+			}
 			/* pass chipc address instead of original core base */
 			if ((si_alloc_wrapper(sii)) != BCME_OK) {
 				err_at = 8;
@@ -7291,8 +7304,9 @@ si_tcm_size(si_t *sih)
 		if (!ret) {
 			goto done;
 		}
-	} else
+	} else {
 		SI_ERROR(("si_iscoreup!!\n"));
+	}
 
 	arm_cap_reg = (volatile uint32 *)(regs + SI_CR4_CAP);
 	corecap = R_REG(sii->osh, arm_cap_reg);

@@ -1599,6 +1599,24 @@ exit:
 	return err;
 }
 
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+int
+dhdpcie_detach(dhdpcie_info_t *pch);
+int
+dhdpcie_enable_msi(struct pci_dev *pdev, unsigned int min_vecs, unsigned int max_vecs);
+void
+dhdpcie_disable_msi(struct pci_dev *pdev);
+int
+dhdpcie_request_irq(dhdpcie_info_t *dhdpcie_info);
+int dhdpcie_get_resource(dhdpcie_info_t *dhdpcie_info);
+int dhdpcie_scan_resource(dhdpcie_info_t *dhdpcie_info);
+
 int
 dhdpcie_detach(dhdpcie_info_t *pch)
 {

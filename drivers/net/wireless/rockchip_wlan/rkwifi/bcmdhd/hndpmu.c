@@ -69,6 +69,20 @@
 
 #include "siutils_priv.h"
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+uint32
+BCMPOSTTRAPFN(si_pmu_chipcontrol)(si_t *sih, uint reg, uint32 mask, uint32 val);
+uint32
+BCMPOSTTRAPFN(si_pmu_vreg_control)(si_t *sih, uint reg, uint32 mask, uint32 val);
+uint32
+BCMPOSTTRAPFN(si_pmu_pllcontrol)(si_t *sih, uint reg, uint32 mask, uint32 val);
+
+
 #ifdef BCM_AVS
 #include <bcm_avs.h>
 #endif

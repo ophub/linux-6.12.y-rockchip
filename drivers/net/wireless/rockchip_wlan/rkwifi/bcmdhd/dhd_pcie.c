@@ -108,6 +108,59 @@
 #endif /* DHD_CONTROL_PCIE_CPUCORE_WIFI_TURNON */
 #include <dhd_linux_pktdump.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void
+dhd_bus_pcie_pwr_req_reload_war(struct dhd_bus *bus);
+void
+dhd_bus_pcie_pwr_req_clear_reload_war(struct dhd_bus *bus);
+bool
+dhdpcie_chip_support_msi(dhd_bus_t *bus);
+uint32
+dhdpcie_bus_intstatus(dhd_bus_t *bus);
+void
+dhdpcie_bus_mpu_disable(dhd_bus_t *bus);
+int
+dhpcie_bus_unmask_interrupt(dhd_bus_t *bus);
+void
+dhd_init_dpc_histos(dhd_pub_t *dhd);
+void
+dhd_deinit_dpc_histos(dhd_pub_t *dhd);
+void
+dhd_dump_dpc_histos(dhd_pub_t *dhd, struct bcmstrbuf *strbuf);
+void
+dhd_clear_dpc_histos(dhd_pub_t *dhd);
+void
+dhd_set_bus_params(struct dhd_bus *bus);
+dhd_pcie_link_state_type_t
+dhdpcie_get_link_state(dhd_bus_t *bus);
+void
+dhd_validate_pcie_link_cbp_wlbp(dhd_bus_t *bus);
+void dhdpcie_mem_dump_bugcheck(dhd_bus_t *bus, uint8 *buf);
+void
+dhdpcie_update_ring_ptrs_in_tcm_with_req_pwr(dhd_bus_t *bus, void *data, uint8 type,
+	uint16 ringid, bool read, bool req_pwr);
+void
+dhdpcie_update_ring_ptrs_in_tcm(dhd_bus_t *bus, void *data, uint8 type,	uint16 ringid,
+	bool read);
+void
+BCMRAMFN(dhd_cap_bcmstrbuf)(dhd_pub_t *dhd, struct bcmstrbuf *b);
+uint8
+dhdpcie_find_pci_capability(osl_t *osh, uint8 req_cap_id);
+void dhd_dump_intr_counters(dhd_pub_t *dhd, struct bcmstrbuf *strbuf);
+void dhd_dump_intr_registers(dhd_pub_t *dhd, struct bcmstrbuf *strbuf);
+void
+dhd_bus_pktq_flush(dhd_pub_t *dhdp);
+int
+dhd_pcie_dump_wrapper_regs(dhd_pub_t *dhd);
+int
+dhd_pcie_dma_info_dump(dhd_pub_t *dhd);
+
+
 #ifdef CONFIG_ARCH_ROCKCHIP
 #include <linux/aspm_ext.h>
 #endif

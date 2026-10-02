@@ -99,6 +99,37 @@
 #endif /* WL_CELLULAR_CHAN_AVOID */
 #include <dhd_config.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void
+wl_validate_wps_ie(const char *wps_ie, s32 wps_ie_len, bool *pbc);
+s32
+wl_cfg80211_set_channel(struct wiphy *wiphy, struct net_device *dev,
+	struct ieee80211_channel *chan,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0))
+	enum nl80211_channel_type channel_type
+#else
+	enum nl80211_chan_width width
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0) */
+);
+s32
+wl_cfg80211_parse_ap_ies(
+	struct net_device *dev,
+	struct cfg80211_beacon_data *info,
+	struct parsed_ies *ies);
+s32
+wl_cfg80211_set_ies(
+	struct net_device *dev,
+	struct cfg80211_beacon_data *info,
+	s32 bssidx);
+void
+wl_cfg80211_ch_switch_notify(struct net_device *dev, uint16 chanspec, struct wiphy *wiphy);
+
+
 #define	MAX_VIF_OFFSET	15
 #define MAX_WAIT_TIME 1500
 

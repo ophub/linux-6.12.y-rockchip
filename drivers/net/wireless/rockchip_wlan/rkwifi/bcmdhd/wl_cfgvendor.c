@@ -93,6 +93,22 @@
 #endif
 #include <brcm_nl80211.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+char*
+wl_get_kernel_timestamp(void);
+struct net_device *
+wl_cfgvendor_get_ndev(struct bcm_cfg80211 *cfg, struct wireless_dev *wdev,
+	const char *data, unsigned long int *out_addr);
+int
+wl_cfgvendor_set_tx_power_policy_handler(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void  *data, int len);
+
+
 #ifdef WL_CELLULAR_CHAN_AVOID
 #include <wl_cfg_cellavoid.h>
 #endif /* WL_CELLULAR_CHAN_AVOID */

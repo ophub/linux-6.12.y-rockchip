@@ -3797,6 +3797,25 @@ dhd_set_host_cap2(dhd_pub_t *dhd)
 }
 #endif /* DHD_PCIE_PTM */
 
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void
+dhd_set_host_cap(dhd_pub_t *dhd);
+void
+dhd_prot_clearcounts(dhd_pub_t *dhd);
+void
+dhd_prot_update_rings_size(dhd_prot_t *prot);
+int
+dhd_prepare_schedule_dmaxfer_free(dhd_pub_t *dhdp);
+void dhd_prot_clean_flow_ring(dhd_pub_t *dhd, void *msgbuf_flow_info);
+void
+dhd_msgbuf_delay_post_ts_bufs(dhd_pub_t *dhd);
+
 void
 dhd_set_host_cap(dhd_pub_t *dhd)
 {

@@ -140,6 +140,50 @@
 
 #include <wlioctl_utils.h>
 
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+int
+wl_get_sideband_num(chanspec_bw_t bw);
+struct wireless_dev *
+wl_cfg80211_p2p_if_add(struct bcm_cfg80211 *cfg,
+	wl_iftype_t wl_iftype,
+	char const *name, u8 *mac_addr, s32 *ret_err);
+s32
+wl_cfg80211_to_fw_iftype(wl_iftype_t iftype);
+bool
+wl_is_fils_supported(struct net_device *ndev);
+int wl_cfg80211_cleanup_mismatch_status(struct net_device *dev, struct bcm_cfg80211 *cfg,
+	bool disassociate);
+s32
+wl_do_preassoc_ops(struct bcm_cfg80211 *cfg,
+		struct net_device *dev, struct cfg80211_connect_params *sme);
+void
+wl_conn_debug_info(struct bcm_cfg80211 *cfg, struct net_device *dev, wlcfg_assoc_info_t *info);
+void
+wl_apply_per_sta_static_settings(struct bcm_cfg80211 *cfg,
+		struct net_device *dev, bool suspend);
+void
+wl_apply_sta_role_settings(struct bcm_cfg80211 *cfg, bool suspend);
+void
+wl_init_listen_timer(struct bcm_cfg80211 *cfg);
+void
+wl_cfg80211_cleanup_connection(struct net_device *net, bool user_enforced);
+char *
+wl_get_link_action_str(u16 link_action);
+char *
+wl_get_assoc_state_str(u16 assoc_state);
+s32
+wl_get_connected_bssid(struct bcm_cfg80211 *cfg, struct net_device *ndev, u8 *mac_addr);
+void
+wl_handle_unexpected_assoc_states(struct bcm_cfg80211 *cfg,
+	struct wireless_dev *wdev, const wl_event_msg_t *e,
+	void *data, wl_assoc_state_t assoc_state);
+
+
 #ifdef CSI_SUPPORT
 #include <dhd_csi.h>
 #endif /* CSI_SUPPORT */

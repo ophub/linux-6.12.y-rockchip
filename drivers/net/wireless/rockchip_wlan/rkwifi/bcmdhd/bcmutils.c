@@ -1024,6 +1024,16 @@ bcmdumptslog(struct bcmstrbuf *b)
 #endif	/* BCMTSTAMPEDLOGS */
 
 #if defined(BCMDBG) || defined(DHD_DEBUG)
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+void
+prpkt(const char *msg, osl_t *osh, void *p0);
+
 /* pretty hex print a pkt buffer chain */
 void
 prpkt(const char *msg, osl_t *osh, void *p0)

@@ -2,6 +2,18 @@
 #include <osl.h>
 #include <dhd_linux.h>
 #include <linux/gpio.h>
+
+/*
+ * Forward declarations for global functions defined in this file.  They
+ * are referenced from other translation units but were never declared
+ * here, which -Wmissing-prototypes (always enabled since Linux 6.10)
+ * reports.
+ */
+int
+dhd_wlan_init_plat_data(wifi_adapter_info_t *adapter);
+void
+dhd_wlan_deinit_plat_data(wifi_adapter_info_t *adapter);
+
 #ifdef BCMDHD_DTS
 #include <linux/of_gpio.h>
 #endif

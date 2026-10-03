@@ -8104,3 +8104,7 @@
 };
 
 #include "rk3588s-pinctrl.dtsi"
+
+#ifdef RK_GPU_MAINLINE
+#include "rk3588s-gpu-panthor.dtsi"
+#endif

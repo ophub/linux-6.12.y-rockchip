@@ -686,3 +686,10 @@ subdir-y	:= $(dts-dirs) overlay
 # which resolves the overlay's __fixups__ against the __symbols__ node of that
 # base.  Emit __symbols__ in every board DTB so any base can take an overlay.
 DTC_FLAGS += -@
+
+# GPU driver flavour baked into the device trees: when the mainline
+# panfrost/panthor drivers are used (CONFIG_RK_GPU_MAINLINE), every affected
+# SoC dtsi pulls in its *-gpu-panfrost.dtsi / *-gpu-panthor.dtsi flavour.
+ifneq ($(CONFIG_RK_GPU_MAINLINE),)
+DTC_CPP_FLAGS += -DRK_GPU_MAINLINE
+endif

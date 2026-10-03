@@ -5592,3 +5592,7 @@
 };
 
 #include "rk3572-pinctrl.dtsi"
+
+#ifdef RK_GPU_MAINLINE
+#include "rk3572-gpu-panthor.dtsi"
+#endif

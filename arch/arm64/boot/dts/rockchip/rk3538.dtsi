@@ -2487,3 +2487,7 @@
 };
 
 #include "rk3538-pinctrl.dtsi"
+
+#ifdef RK_GPU_MAINLINE
+#include "rk3538-gpu-panthor.dtsi"
+#endif

@@ -483,6 +483,42 @@ source "drivers/gpu/drm/panfrost/Kconfig"
 
 source "drivers/gpu/drm/panthor/Kconfig"
 
+# Rockchip ships both the vendor Mali kbase drivers (drivers/gpu/arm) and the
+# mainline panfrost/panthor drivers.  They match the same device tree nodes,
+# so only one of them may be used for a given board and the device trees have
+# to describe the GPU the matching way.  This choice feeds the devicetree
+# preprocessor (DTC_CPP_FLAGS in arch/arm64/boot/dts/rockchip/Makefile), so
+# that the SoC dtsi files automatically include their panfrost/panthor
+# flavour when the mainline drivers are used.
+choice
+	prompt "Rockchip GPU driver flavour"
+	depends on (ARCH_ROCKCHIP || COMPILE_TEST) && DRM
+	default RK_GPU_MAINLINE if DRM_PANFROST || DRM_PANTHOR
+	default RK_GPU_VENDOR
+	help
+	  Selects which GPU driver the Rockchip device trees describe.  The
+	  vendor kbase drivers and the mainline panfrost/panthor drivers should
+	  not be enabled at the same time; the device trees are generated for
+	  the selected flavour.
+
+config RK_GPU_VENDOR
+	bool "Vendor Mali kbase (bifrost/valhall)"
+	help
+	  Keep the vendor GPU description in the device trees.  Use this
+	  together with CONFIG_MALI_BIFROST / CONFIG_MALI_VALHALL.
+
+config RK_GPU_MAINLINE
+	bool "Mainline panfrost / panthor"
+	depends on DRM_PANFROST || DRM_PANTHOR
+	help
+	  Describe the GPU so that the mainline panfrost (Midgard/Bifrost) or
+	  panthor (Valhall CSF) driver binds to it: the SoC dtsi files include
+	  their *-gpu-panfrost.dtsi / *-gpu-panthor.dtsi flavour.  This only
+	  changes the device trees; enable DRM_PANFROST / DRM_PANTHOR (as
+	  built-in or as modules) yourself, and make sure the vendor Mali
+	  drivers (CONFIG_MALI_BIFROST, CONFIG_MALI_VALHALL) are disabled.
+endchoice
+
 source "drivers/gpu/drm/aspeed/Kconfig"
 
 source "drivers/gpu/drm/mcde/Kconfig"

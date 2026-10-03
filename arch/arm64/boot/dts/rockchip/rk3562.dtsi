@@ -3338,3 +3338,7 @@
 };
 
 #include "rk3562-pinctrl.dtsi"
+
+#ifdef RK_GPU_MAINLINE
+#include "rk3562-gpu-panfrost.dtsi"
+#endif

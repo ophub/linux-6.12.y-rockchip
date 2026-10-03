@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Panfrost flavour of the RK3566/RK3568 GPU.
+ *
+ * Included from rk356x.dtsi when CONFIG_RK_GPU_MAINLINE is set; the vendor
+ * description in rk356x.dtsi is left untouched.
+ *
+ *  - the SCMI clock stays in place (it is the clock the OPPs are built on)
+ *    but is renamed "gpu", and the CRU GPU clock becomes the "bus" clock so
+ *    that panfrost keeps it enabled;
+ *  - interrupts are renamed to the lower case panfrost names;
+ *  - the vendor OPP table is gated by opp-supported-hw, so a dedicated
+ *    table is used, limited to 200..700 MHz, the range common to RK3566 and
+ *    RK3568 (the 800 MHz entry is RK3568 specific in the vendor table).
+ */
+
+&gpu {
+	clocks = <&scmi_clk 1>, <&cru CLK_GPU>;
+	clock-names = "gpu", "bus";
+
+	interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "gpu", "mmu", "job";
+
+	operating-points-v2 = <&gpu_opp_table_panfrost>;
+};
+
+/ {
+	gpu_opp_table_panfrost: gpu-opp-table-panfrost {
+		compatible = "operating-points-v2";
+
+		opp-200000000 {
+			opp-hz = /bits/ 64 <200000000>;
+			opp-microvolt = <850000 850000 1000000>;
+		};
+		opp-300000000 {
+			opp-hz = /bits/ 64 <300000000>;
+			opp-microvolt = <850000 850000 1000000>;
+		};
+		opp-400000000 {
+			opp-hz = /bits/ 64 <400000000>;
+			opp-microvolt = <850000 850000 1000000>;
+		};
+		opp-600000000 {
+			opp-hz = /bits/ 64 <600000000>;
+			opp-microvolt = <900000 900000 1000000>;
+		};
+		opp-700000000 {
+			opp-hz = /bits/ 64 <700000000>;
+			opp-microvolt = <950000 950000 1000000>;
+		};
+	};
+};

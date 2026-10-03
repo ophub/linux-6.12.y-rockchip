@@ -120,7 +120,10 @@ DTC_FLAGS += $(if $(filter $(patsubst $(obj)/%,%,$@), $(base-dtb-y)), -@)
 
 DTC_INCLUDE := $(srctree)/scripts/dtc/include-prefixes
 
-dtc_cpp_flags = -Wp,-MMD,$(depfile).pre.tmp -nostdinc -I $(DTC_INCLUDE) -undef -D__DTS__
+# DTC_CPP_FLAGS lets the arch/board Makefiles pass extra preprocessor
+# definitions (e.g. to select a driver flavour in the device trees).
+dtc_cpp_flags = -Wp,-MMD,$(depfile).pre.tmp -nostdinc -I $(DTC_INCLUDE) \
+		$(DTC_CPP_FLAGS) -undef -D__DTS__
 
 dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
 

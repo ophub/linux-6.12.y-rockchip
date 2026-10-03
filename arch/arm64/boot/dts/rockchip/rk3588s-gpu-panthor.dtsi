@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Panthor flavour of the RK3588/RK3588S GPU.
+ *
+ * Included from rk3588s.dtsi when CONFIG_RK_GPU_MAINLINE is set; the vendor
+ * description in rk3588s.dtsi is left untouched.  rk3588.dtsi includes
+ * rk3588s.dtsi, so all RK3588 family boards are covered by this fragment.
+ *
+ *  - panthor matches "rockchip,rk3588-mali" / "arm,mali-valhall-csf", while
+ *    the vendor node spells "arm,mali-valhall" (which no mainline driver
+ *    matches);
+ *  - panthor takes clock #0 as the core clock, so the CRU clocks are handed
+ *    over instead of the SCMI one (the SCMI clock is still used as the
+ *    assigned clock, exactly like the upstream description does);
+ *  - interrupts are renamed and reordered to the lower case panfrost/panthor
+ *    names;
+ *  - panthor requires an OPP table (panthor_devfreq_init() fails the probe
+ *    without one) and only supports the "mali" regulator, so a dedicated
+ *    table with single regulator voltages is used; the boards keep
+ *    supplying mali-supply / mem-supply.
+ */
+
+&gpu {
+	compatible = "rockchip,rk3588-mali", "arm,mali-valhall-csf";
+
+	clocks = <&cru CLK_GPU>, <&cru CLK_GPU_COREGROUP>,
+		 <&cru CLK_GPU_STACKS>;
+	clock-names = "core", "coregroup", "stacks";
+
+	interrupts = <GIC_SPI 92 IRQ_TYPE_LEVEL_HIGH 0>,
+		     <GIC_SPI 93 IRQ_TYPE_LEVEL_HIGH 0>,
+		     <GIC_SPI 94 IRQ_TYPE_LEVEL_HIGH 0>;
+	interrupt-names = "job", "mmu", "gpu";
+
+	operating-points-v2 = <&gpu_opp_table_panthor>;
+};
+
+/ {
+	gpu_opp_table_panthor: gpu-opp-table-panthor {
+		compatible = "operating-points-v2";
+
+		opp-300000000 {
+			opp-hz = /bits/ 64 <300000000>;
+			opp-microvolt = <675000 675000 850000>;
+		};
+		opp-400000000 {
+			opp-hz = /bits/ 64 <400000000>;
+			opp-microvolt = <675000 675000 850000>;
+		};
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+			opp-microvolt = <675000 675000 850000>;
+		};
+		opp-600000000 {
+			opp-hz = /bits/ 64 <600000000>;
+			opp-microvolt = <675000 675000 850000>;
+		};
+		opp-700000000 {
+			opp-hz = /bits/ 64 <700000000>;
+			opp-microvolt = <700000 700000 850000>;
+		};
+		opp-800000000 {
+			opp-hz = /bits/ 64 <800000000>;
+			opp-microvolt = <750000 750000 850000>;
+		};
+		opp-900000000 {
+			opp-hz = /bits/ 64 <900000000>;
+			opp-microvolt = <800000 800000 850000>;
+		};
+		opp-1000000000 {
+			opp-hz = /bits/ 64 <1000000000>;
+			opp-microvolt = <850000 850000 850000>;
+		};
+	};
+};

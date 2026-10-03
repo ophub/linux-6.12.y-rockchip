@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Panthor flavour of the RK3572 GPU.
+ *
+ * Included from rk3572.dtsi when CONFIG_RK_GPU_MAINLINE is set; the vendor
+ * description in rk3572.dtsi is left untouched.
+ *
+ * The vendor node spells "arm,mali-valhall" (matched by the vendor kbase
+ * driver only) and lists the SCMI clock first, so switch to the CSF
+ * compatible panthor understands and hand over the CRU clocks as
+ * core/coregroup/stacks, following the upstream RK3588 description.
+ *
+ * The vendor gpu_opp_table is kept: it carries no opp-supported-hw and uses
+ * single regulator voltages, which is what panthor expects.
+ *
+ * NOTE: no mainline reference was available for this SoC, the GPU has to be
+ * validated on hardware.
+ */
+
+&gpu {
+	compatible = "arm,mali-valhall-csf";
+
+	clocks = <&cru CLK_GPU>, <&cru CLK_GPU_COREGROUP>,
+		 <&cru CLK_GPU_STACKS>;
+	clock-names = "core", "coregroup", "stacks";
+
+	interrupts = <GIC_SPI 333 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 332 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 334 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "job", "mmu", "gpu";
+};

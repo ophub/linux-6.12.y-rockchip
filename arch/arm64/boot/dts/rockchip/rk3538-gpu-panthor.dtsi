@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Panthor flavour of the RK3538 GPU.
+ *
+ * Included from rk3538.dtsi when CONFIG_RK_GPU_MAINLINE is set; the vendor
+ * description in rk3538.dtsi is left untouched.
+ *
+ * The vendor node spells "arm,mali-valhall" and lists the SCMI clock first;
+ * panthor needs the CSF compatible and the CRU GPU core clock as clock #0.
+ * The vendor gpu_opp_table is kept (no opp-supported-hw, single regulator
+ * voltages).
+ *
+ * NOTE: no mainline reference was available for this SoC, the GPU has to be
+ * validated on hardware.
+ */
+
+&gpu {
+	compatible = "arm,mali-valhall-csf";
+
+	clocks = <&cru CLK_GPU_CORE>, <&scmi_clk CLK_GPU_CORE>;
+	clock-names = "core", "bus";
+
+	interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 149 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "job", "mmu", "gpu";
+};

@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Panfrost flavour of the PX30 GPU.
+ *
+ * Included from px30.dtsi when CONFIG_RK_GPU_MAINLINE is set; the vendor
+ * description in px30.dtsi is left untouched.
+ *
+ * PX30 needs the least work: the node already carries the mainline
+ * "rockchip,px30-mali", "arm,mali-bifrost" compatible, a single CRU clock
+ * and an OPP table without opp-supported-hw.  Only the interrupt names have
+ * to be lower cased for panfrost, whose interrupts are looked up by name.
+ */
+
+&gpu {
+	interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "job", "mmu", "gpu";
+};

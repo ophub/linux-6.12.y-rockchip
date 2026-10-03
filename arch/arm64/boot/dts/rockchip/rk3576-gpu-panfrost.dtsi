@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Panfrost flavour of the RK3576 GPU.
+ *
+ * Included from rk3576.dtsi when CONFIG_RK_GPU_MAINLINE is set, so that the
+ * device tree matches the panfrost driver instead of the vendor Mali kbase
+ * driver (the vendor properties are kept in rk3576.dtsi untouched).
+ *
+ * Differences against the vendor description:
+ *  - panfrost takes clock #0 as the core clock and leaves the "clk_mali"
+ *    SCMI clock alone, so only the CRU GPU clock is handed over;
+ *  - panfrost looks the interrupts up by name ("job", "mmu", "gpu");
+ *  - the GPU power domain needs its clocks so that the generic power domain
+ *    code can gate them;
+ *  - the vendor OPP table is gated by opp-supported-hw (the kbase driver
+ *    feeds the chip version through dev_pm_opp_set_supported_hw(), panfrost
+ *    does not, which would drop every OPP), so a dedicated table without
+ *    that property is used here.  It is limited to 300..700 MHz, the range
+ *    common to all RK3576 variants; the 800 MHz (RK3576S) and 900 MHz
+ *    entries stay in the vendor table.
+ */
+
+&gpu {
+	compatible = "rockchip,rk3576-mali", "arm,mali-bifrost";
+	clocks = <&cru CLK_GPU>;
+	clock-names = "core";
+
+	interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 348 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 349 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "job", "mmu", "gpu";
+
+	operating-points-v2 = <&gpu_opp_table_panfrost>;
+};
+
+&power {
+	power-domain@RK3576_PD_GPU {
+		clocks = <&cru CLK_GPU>, <&cru PCLK_GPU_ROOT>;
+		#power-domain-cells = <0>;
+	};
+};
+
+/ {
+	gpu_opp_table_panfrost: gpu-opp-table-panfrost {
+		compatible = "operating-points-v2";
+
+		opp-300000000 {
+			opp-hz = /bits/ 64 <300000000>;
+			opp-microvolt = <750000 750000 875000>;
+		};
+		opp-400000000 {
+			opp-hz = /bits/ 64 <400000000>;
+			opp-microvolt = <750000 750000 875000>;
+		};
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+			opp-microvolt = <750000 750000 875000>;
+		};
+		opp-600000000 {
+			opp-hz = /bits/ 64 <600000000>;
+			opp-microvolt = <750000 750000 875000>;
+		};
+		opp-700000000 {
+			opp-hz = /bits/ 64 <700000000>;
+			opp-microvolt = <750000 750000 875000>;
+		};
+	};
+};

@@ -6734,3 +6734,7 @@
 };
 
 #include "rk3576-pinctrl.dtsi"
+
+#ifdef RK_GPU_MAINLINE
+#include "rk3576-gpu-panfrost.dtsi"
+#endif

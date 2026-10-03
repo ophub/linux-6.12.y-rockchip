@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Panfrost flavour of the RK3562 GPU.
+ *
+ * Included from rk3562.dtsi when CONFIG_RK_GPU_MAINLINE is set; the vendor
+ * description in rk3562.dtsi is left untouched.
+ *
+ *  - the SCMI clock is dropped from "clocks" so that panfrost picks the CRU
+ *    GPU clock as its core clock (this matches the upstream description);
+ *  - interrupts are renamed to the lower case panfrost names;
+ *  - the vendor OPP table is gated by opp-supported-hw, so a dedicated
+ *    table is used.  It is limited to 300..800 MHz, the range supported by
+ *    the RK3562 sets described in the vendor table, with the highest
+ *    voltage of the two variants for each frequency.
+ */
+
+&gpu {
+	compatible = "rockchip,rk3562-mali", "arm,mali-bifrost";
+	clocks = <&cru CLK_GPU>, <&cru CLK_GPU_BRG>, <&cru ACLK_GPU_PRE>;
+	clock-names = "clk_gpu", "clk_gpu_brg", "aclk_gpu";
+
+	interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 77 IRQ_TYPE_LEVEL_HIGH>,
+		     <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "job", "mmu", "gpu";
+
+	operating-points-v2 = <&gpu_opp_table_panfrost>;
+};
+
+/ {
+	gpu_opp_table_panfrost: gpu-opp-table-panfrost {
+		compatible = "operating-points-v2";
+
+		opp-300000000 {
+			opp-hz = /bits/ 64 <300000000>;
+			opp-microvolt = <900000 900000 1000000>;
+		};
+		opp-400000000 {
+			opp-hz = /bits/ 64 <400000000>;
+			opp-microvolt = <900000 900000 1000000>;
+		};
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+			opp-microvolt = <900000 900000 1000000>;
+		};
+		opp-600000000 {
+			opp-hz = /bits/ 64 <600000000>;
+			opp-microvolt = <900000 900000 1000000>;
+		};
+		opp-700000000 {
+			opp-hz = /bits/ 64 <700000000>;
+			opp-microvolt = <900000 900000 1000000>;
+		};
+		opp-800000000 {
+			opp-hz = /bits/ 64 <800000000>;
+			opp-microvolt = <950000 950000 1000000>;
+		};
+	};
+};

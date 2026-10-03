@@ -3246,3 +3246,7 @@
 	};
 };
 #include "px30s-pinctrl.dtsi"
+
+#ifdef RK_GPU_MAINLINE
+#include "px30-gpu-panfrost.dtsi"
+#endif

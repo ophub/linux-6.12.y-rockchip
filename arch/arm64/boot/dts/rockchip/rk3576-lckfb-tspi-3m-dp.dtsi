@@ -42,9 +42,15 @@
  * status: Enable DP controller
  * svid: DisplayPort protocol ID (usually 0xff01)
  *-----------------------------------------------------------*/
+/*
+ * The DW-DP driver only registers its Type-C mode-switch when this property
+ * is present.  The Type-C connector (rk3576-lckfb-tspi-3m-typec.dtsi) refers
+ * to it with "mode-switch = <&dp>", so without it typec_mux_get() returns
+ * -EPROBE_DEFER and the FUSB302 TCPC stays in deferred probe forever.
+ */
 &dp {
 	status = "okay";
-	svid = <0xff01>;
+	mode-switch;
 };
 
 /*-----------------------------------------------------------

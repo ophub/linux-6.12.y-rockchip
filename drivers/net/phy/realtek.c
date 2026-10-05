@@ -13,6 +13,9 @@
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/property.h>
+#include <linux/slab.h>
+#include <linux/string.h>
 
 #define RTL821x_PHYSR				0x11
 #define RTL821x_PHYSR_DUPLEX			BIT(13)
@@ -40,6 +43,7 @@
 #define RTL8211F_LEDCR_LINK_10			BIT(0)
 #define RTL8211F_LEDCR_MASK			GENMASK(4, 0)
 #define RTL8211F_LEDCR_SHIFT			5
+#define RTL8211F_LEDCR_PAGE			0xd04
 
 #define RTL8211F_TX_DELAY			BIT(8)
 #define RTL8211F_RX_DELAY			BIT(3)
@@ -108,7 +112,194 @@ struct rtl821x_priv {
 	u16 phycr2;
 	bool has_phycr2;
 	struct clk *clk;
+
+	/* LED configuration written verbatim in "realtek,led-data" style */
+	bool led_data_cfg;
+	u16 led_data;
+	/* LED configuration written in "realtek,ledX-triggers" style */
+	bool led_dts_cfg[RTL8211F_LED_COUNT];
+	u16 led_vals[RTL8211F_LED_COUNT];
 };
+
+/*
+ * LED support for the RTL8211F.  Two DT styles are supported at the same time:
+ *  - trigger style: "realtek,led0/1/2-triggers" string lists
+ *  - raw style:     "realtek,led-data" holds the raw 16-bit LEDCR value
+ * The trigger style overrides the raw style for the LEDs it configures.
+ */
+static const struct {
+	const char *name;
+	u16 mask;
+} rtl8211f_led_trigger_map[] = {
+	{ "activity", RTL8211F_LEDCR_ACT_TXRX },
+	{ "rx", RTL8211F_LEDCR_ACT_TXRX },
+	{ "tx", RTL8211F_LEDCR_ACT_TXRX },
+	{ "link", RTL8211F_LEDCR_LINK_10 | RTL8211F_LEDCR_LINK_100 |
+		  RTL8211F_LEDCR_LINK_1000 },
+	{ "link-10", RTL8211F_LEDCR_LINK_10 },
+	{ "link-100", RTL8211F_LEDCR_LINK_100 },
+	{ "link-1000", RTL8211F_LEDCR_LINK_1000 },
+};
+
+static const char * const rtl8211f_led_propnames[RTL8211F_LED_COUNT] = {
+	"realtek,led0-triggers",
+	"realtek,led1-triggers",
+	"realtek,led2-triggers",
+};
+
+static int rtl8211f_parse_led_data(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct rtl821x_priv *priv = phydev->priv;
+	u32 led_data;
+	int ret;
+
+	if (!priv)
+		return 0;
+
+	ret = device_property_read_u32(dev, "realtek,led-data", &led_data);
+	if (ret)
+		return 0;
+
+	ret = phy_write_paged(phydev, RTL8211F_LEDCR_PAGE, RTL8211F_LEDCR,
+			      (u16)led_data);
+	if (ret < 0) {
+		phydev_err(phydev, "Failed to write LEDCR (led-data), err=%d\n",
+			   ret);
+		return ret;
+	}
+
+	priv->led_data = (u16)led_data;
+	priv->led_data_cfg = true;
+	phydev_dbg(phydev, "LEDCR configured via DTS (led-data), val=0x%04x\n",
+		   priv->led_data);
+
+	return 0;
+}
+
+static int rtl8211f_parse_led_triggers(struct phy_device *phydev, u8 led_index,
+				       const char *propname)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct rtl821x_priv *priv = phydev->priv;
+	const char **trigger_names;
+	int count, i, j;
+	u16 mask, val = 0;
+	int ret;
+
+	if (!priv)
+		return 0;
+
+	count = device_property_string_array_count(dev, propname);
+	if (count <= 0)
+		return 0;
+
+	trigger_names = kcalloc(count, sizeof(char *), GFP_KERNEL);
+	if (!trigger_names)
+		return -ENOMEM;
+
+	ret = device_property_read_string_array(dev, propname, trigger_names, count);
+	if (ret < 0) {
+		kfree(trigger_names);
+		return ret;
+	}
+
+	for (i = 0; i < count; i++) {
+		bool found = false;
+
+		for (j = 0; j < ARRAY_SIZE(rtl8211f_led_trigger_map); j++) {
+			if (strcmp(trigger_names[i], rtl8211f_led_trigger_map[j].name) == 0) {
+				val |= rtl8211f_led_trigger_map[j].mask;
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+			phydev_warn(phydev, "Unknown LED trigger '%s' for LED%d\n",
+				    trigger_names[i], led_index);
+	}
+	kfree(trigger_names);
+
+	val &= RTL8211F_LEDCR_MASK;
+	mask = RTL8211F_LEDCR_MASK << (RTL8211F_LEDCR_SHIFT * led_index);
+
+	ret = phy_modify_paged(phydev, RTL8211F_LEDCR_PAGE, RTL8211F_LEDCR,
+			       mask, (val << (RTL8211F_LEDCR_SHIFT * led_index)) |
+			       RTL8211F_LEDCR_MODE);
+	if (ret < 0) {
+		phydev_err(phydev, "Failed to write LED%d config, err=%d\n",
+			   led_index, ret);
+		return ret;
+	}
+
+	priv->led_vals[led_index] = val;
+	priv->led_dts_cfg[led_index] = true;
+	phydev_dbg(phydev, "LED%d configured via DTS with triggers, val=0x%04x\n",
+		   led_index, val);
+
+	return 0;
+}
+
+static int rtl8211f_parse_leds(struct phy_device *phydev)
+{
+	int i, ret;
+
+	ret = rtl8211f_parse_led_data(phydev);
+	if (ret < 0)
+		return ret;
+
+	for (i = 0; i < RTL8211F_LED_COUNT; i++)
+		rtl8211f_parse_led_triggers(phydev, i, rtl8211f_led_propnames[i]);
+
+	return 0;
+}
+
+static void rtl8211f_restore_leds(struct phy_device *phydev)
+{
+	struct rtl821x_priv *priv = phydev->priv;
+	int i, ret;
+
+	if (!priv)
+		return;
+
+	if (priv->led_data_cfg) {
+		ret = phy_write_paged(phydev, RTL8211F_LEDCR_PAGE,
+				      RTL8211F_LEDCR, priv->led_data);
+		if (ret < 0)
+			phydev_err(phydev, "Failed to restore LEDCR (led-data): %d\n",
+				   ret);
+		return;
+	}
+
+	for (i = 0; i < RTL8211F_LED_COUNT; i++) {
+		u16 mask, val;
+
+		if (!priv->led_dts_cfg[i])
+			continue;
+
+		mask = RTL8211F_LEDCR_MASK << (RTL8211F_LEDCR_SHIFT * i);
+		val = (priv->led_vals[i] & RTL8211F_LEDCR_MASK) <<
+		      (RTL8211F_LEDCR_SHIFT * i);
+		val |= RTL8211F_LEDCR_MODE;
+
+		ret = phy_modify_paged(phydev, RTL8211F_LEDCR_PAGE,
+				       RTL8211F_LEDCR, mask, val);
+		if (ret < 0)
+			phydev_err(phydev, "Failed to restore LED%d config: %d\n",
+				   i, ret);
+	}
+}
+
+static bool rtl8211f_led_dts_managed(struct rtl821x_priv *priv, u8 index)
+{
+	if (!priv)
+		return false;
+
+	if (priv->led_data_cfg)
+		return true;
+
+	return index < RTL8211F_LED_COUNT && priv->led_dts_cfg[index];
+}
 
 static int rtl821x_read_page(struct phy_device *phydev)
 {
@@ -156,6 +347,8 @@ static int rtl821x_probe(struct phy_device *phydev)
 	}
 
 	phydev->priv = priv;
+
+	rtl8211f_parse_leds(phydev);
 
 	return 0;
 }
@@ -406,6 +599,7 @@ static int rtl8211f_config_init(struct phy_device *phydev)
 		break;
 
 	default: /* the rest of the modes imply leaving delay as is. */
+		rtl8211f_restore_leds(phydev);
 		return 0;
 	}
 
@@ -448,8 +642,12 @@ static int rtl8211f_config_init(struct phy_device *phydev)
 			return ret;
 		}
 
-		return genphy_soft_reset(phydev);
+		ret = genphy_soft_reset(phydev);
+		if (ret < 0)
+			return ret;
 	}
+
+	rtl8211f_restore_leds(phydev);
 
 	return 0;
 }
@@ -491,6 +689,7 @@ static int rtl821x_resume(struct phy_device *phydev)
 static int rtl8211f_led_hw_is_supported(struct phy_device *phydev, u8 index,
 					unsigned long rules)
 {
+	struct rtl821x_priv *priv = phydev->priv;
 	const unsigned long mask = BIT(TRIGGER_NETDEV_LINK_10) |
 				   BIT(TRIGGER_NETDEV_LINK_100) |
 				   BIT(TRIGGER_NETDEV_LINK_1000) |
@@ -509,6 +708,9 @@ static int rtl8211f_led_hw_is_supported(struct phy_device *phydev, u8 index,
 	 * This code currently uses mode B only.
 	 */
 
+	if (rtl8211f_led_dts_managed(priv, index))
+		return -EOPNOTSUPP;
+
 	if (index >= RTL8211F_LED_COUNT)
 		return -EINVAL;
 
@@ -526,7 +728,11 @@ static int rtl8211f_led_hw_is_supported(struct phy_device *phydev, u8 index,
 static int rtl8211f_led_hw_control_get(struct phy_device *phydev, u8 index,
 				       unsigned long *rules)
 {
+	struct rtl821x_priv *priv = phydev->priv;
 	int val;
+
+	if (rtl8211f_led_dts_managed(priv, index))
+		return -EOPNOTSUPP;
 
 	if (index >= RTL8211F_LED_COUNT)
 		return -EINVAL;
@@ -559,7 +765,11 @@ static int rtl8211f_led_hw_control_set(struct phy_device *phydev, u8 index,
 				       unsigned long rules)
 {
 	const u16 mask = RTL8211F_LEDCR_MASK << (RTL8211F_LEDCR_SHIFT * index);
+	struct rtl821x_priv *priv = phydev->priv;
 	u16 reg = 0;
+
+	if (rtl8211f_led_dts_managed(priv, index))
+		return -EOPNOTSUPP;
 
 	if (index >= RTL8211F_LED_COUNT)
 		return -EINVAL;

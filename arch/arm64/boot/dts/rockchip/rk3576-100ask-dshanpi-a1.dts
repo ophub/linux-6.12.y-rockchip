@@ -258,6 +258,16 @@
 			linux,cma-default;
 		};
 
+		drm_logo: drm-logo@0 {
+			compatible = "rockchip,drm-logo";
+			reg = <0x0 0x0 0x0 0x0>;
+		};
+
+		drm_cubic_lut: drm-cubic-lut@0 {
+			compatible = "rockchip,drm-cubic-lut";
+			reg = <0x0 0x0 0x0 0x0>;
+		};
+
 		ramoops: ramoops@40110000 {
 			compatible = "ramoops";
 			/* 0x40110000 to 0x401f0000 is for ramoops */
@@ -511,8 +521,8 @@
 };
 
 &display_subsystem {
-	clocks = <&hdptxphy>;
-	clock-names = "hdmi0_phy_pll";
+	memory-region = <&drm_logo>, <&drm_cubic_lut>;
+	memory-region-names = "drm-logo", "drm-cubic-lut";
 };
 
 &dmc {
@@ -588,8 +598,8 @@
 
 &hdmi {
 	/* DDC I2C speed: 50khz */
-	//ddc-i2c-scl-high-time-ns = <9625>;
-	//ddc-i2c-scl-low-time-ns = <10000>;
+	ddc-i2c-scl-high-time-ns = <9625>;
+	ddc-i2c-scl-low-time-ns = <10000>;
 
 	/* DDC I2C speed: 100khz */
 	//ddc-i2c-scl-high-time-ns = <4812>;
@@ -1394,6 +1404,39 @@
 	status = "okay";
 };
 
+&fspi1m1_pins {
+	rockchip,pins =
+		/* fspi1_clk_m1 */
+		<1 RK_PD5 3 &pcfg_pull_none>,
+		/* fspi1_d0_m1 */
+		<1 RK_PC4 3 &pcfg_pull_none>,
+		/* fspi1_d1_m1 */
+		<1 RK_PC5 3 &pcfg_pull_none>,
+		/* fspi1_d2_m1 */
+		<1 RK_PC6 3 &pcfg_pull_none>,
+		/* fspi1_d3_m1 */
+		<1 RK_PC7 3 &pcfg_pull_none>;
+};
+
+&sfc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&fspi1m1_csn0 &fspi1m1_pins>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	spi-nor@0 {
+		compatible = "jedec,spi-nor";
+		label = "sfc_nor";
+		reg = <0>;
+		m25p,fast-read;
+		spi-max-frequency = <50000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <1>;
+		vcc-supply = <&vcc_3v3_s0>;
+	};
+};
+
 /* dp0 sound */
 &spdif_tx3 {
 	status = "okay";
@@ -1419,12 +1462,6 @@
 &u2phy1_otg {
 	phy-supply = <&vcc5v0_sys>;
 	status = "okay";
-};
-
-&uart4 {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart4m1_xfer>;
 };
 
 /* io: 1v8, to 40p con */

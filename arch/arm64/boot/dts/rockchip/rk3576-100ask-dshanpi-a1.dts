@@ -521,9 +521,17 @@
 	mem-supply = <&vdd_logic_s0>;
 };
 
+/*
+ * The Rockchip DW-DP driver registers its Type-C mode-switch only when the
+ * DP node carries the "mode-switch" property.  The Type-C connector below
+ * refers to it via "mode-switch = <&dp>", so without this property the mux
+ * never appears and typec_mux_get() returns -EPROBE_DEFER, which keeps the
+ * HUSB311 TCPC (and therefore the whole Type-C port) in deferred probe.
+ * Same as rk3576-evb1.dtsi / rk3576s-evb1.dtsi.
+ */
 &dp {
 	status = "okay";
-	svid = <0xff01>;
+	mode-switch;
 };
 
 &dp0 {

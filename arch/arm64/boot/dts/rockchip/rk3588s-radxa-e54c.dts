@@ -969,6 +969,7 @@
 /* typec0 usb/dp altmode mux phy */
 &usbdp_phy0 {
 	orientation-switch;
+	mode-switch;
 	svid = <0xff01>;
 	sbu1-dc-gpios = <&gpio1 RK_PA6 GPIO_ACTIVE_HIGH>;
 	sbu2-dc-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;

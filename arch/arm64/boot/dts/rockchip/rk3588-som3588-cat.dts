@@ -1247,6 +1247,7 @@
 /* USB3.1/DP Combo PHY0 */
 &usbdp_phy0 {
 	orientation-switch;
+	mode-switch;
 	svid = <0xff01>;
 	sbu1-dc-gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>;
 	sbu2-dc-gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>;

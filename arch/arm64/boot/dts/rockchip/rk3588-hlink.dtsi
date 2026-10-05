@@ -1106,6 +1106,7 @@
 &usbdp_phy0 {
 	status = "okay";
 	orientation-switch;
+	mode-switch;
 
 	rockchip,dp-lane-mux = < 2 3 >;
 

@@ -268,6 +268,7 @@
 &usbdp_phy0 {
 	status = "okay";
 	orientation-switch;
+	mode-switch;
 	svid = <0xff01>;
 	sbu1-dc-gpios = <&gpio3 RK_PC4 GPIO_ACTIVE_HIGH>;
 	sbu2-dc-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;

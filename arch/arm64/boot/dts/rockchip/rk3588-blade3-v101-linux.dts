@@ -535,6 +535,7 @@
 	status = "okay";
 
 	orientation-switch;
+	mode-switch;
 	svid = <0xff01>;
 	sbu1-dc-gpios = <&gpio4 RK_PA6 GPIO_ACTIVE_HIGH>;
 	sbu2-dc-gpios = <&gpio4 RK_PA7 GPIO_ACTIVE_HIGH>;
@@ -560,6 +561,7 @@
 	status = "okay";
 
 	orientation-switch;
+	mode-switch;
 	svid = <0xff01>;	// linux/usb/typec_dp.h:USB_TYPEC_DP_SID
 	sbu1-dc-gpios = <&gpio4 RK_PA4 GPIO_ACTIVE_HIGH>;
 	sbu2-dc-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;

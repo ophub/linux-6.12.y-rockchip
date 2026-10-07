@@ -1000,6 +1000,11 @@
 		clocks = <&cru REFCLKO25M_GMAC0_OUT>;
 		compatible = "ethernet-phy-id001c.c916";
 		reg = <0x1>;
+
+		/* LED1 Green */
+		realtek,led1-triggers = "link-10", "link-100", "link-1000";
+		/* LED2 Yellow */
+		realtek,led2-triggers = "activity";
 	};
 };
 

@@ -13981,6 +13981,17 @@ static void rkcif_init_reset_work(struct rkcif_timer *timer)
 	timer->csi2_err_cnt_even = 0;
 	timer->csi2_err_fs_fe_cnt = 0;
 	timer->notifer_called_cnt = 0;
+	/*
+	 * Reset the csi2 err latch as well. Otherwise, once an error has been
+	 * counted, csi2_err_triggered_cnt stays >= 1 and csi2_first_err_timestamp
+	 * keeps aging, so rkcif_is_csi2_err_trigger_reset() would re-trigger on
+	 * every monitoring cycle forever (especially in reset-by-user mode where
+	 * rkcif_do_reset_work() - the only other place clearing these - is not
+	 * run). This caused the endless "trigger reset for time out of csi err"
+	 * storm while the stream itself was perfectly healthy.
+	 */
+	timer->csi2_err_triggered_cnt = 0;
+	timer->csi2_first_err_timestamp = 0;
 	dev->is_toisp_reset = false;
 	for (i = 0; i < dev->num_channels; i++) {
 		stream = &dev->stream[i];

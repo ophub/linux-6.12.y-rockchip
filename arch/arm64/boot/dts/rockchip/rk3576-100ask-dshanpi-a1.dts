@@ -521,6 +521,7 @@
 };
 
 &display_subsystem {
+	devfreq = <&dmc>;
 	memory-region = <&drm_logo>, <&drm_cubic_lut>;
 	memory-region-names = "drm-logo", "drm-cubic-lut";
 };

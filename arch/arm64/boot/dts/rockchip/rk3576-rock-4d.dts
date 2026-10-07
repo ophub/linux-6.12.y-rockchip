@@ -450,8 +450,6 @@
 };
 
 &display_subsystem {
-	clocks = <&hdptxphy>;
-	clock-names = "hdmi0_phy_pll";
 	memory-region = <&drm_logo>, <&drm_cubic_lut>;
 	memory-region-names = "drm-logo", "drm-cubic-lut";
 	devfreq = <&dmc>;
@@ -1228,9 +1226,6 @@
 
 &route_hdmi {
 	status = "okay";
-	logo,uboot = "logo.bmp";
-	logo,kernel = "logo_kernel.bmp";
-	connect = <&vp0_out_hdmi>;
 };
 
 &sai1 {
@@ -1320,8 +1315,6 @@
 	rockchip,dp-lane-mux = <2 3>;
 	status = "okay";
 };
-
-
 
 &usb_drd1_dwc3 {
 	dr_mode = "host";

@@ -5544,6 +5544,18 @@ static void dw_dp_hpd_work(struct work_struct *work)
 	bool long_hpd;
 	int ret;
 
+	/*
+	 * The typec mux callback (and the HPD interrupt) can schedule this
+	 * work before the DP bridge has been attached to a DRM device, for
+	 * example when a DSI panel delays the display-subsystem from binding.
+	 * drm_helper_hpd_irq_event() dereferences dp->bridge.dev, so bail out
+	 * until the bridge is attached. Nothing is lost: the plug state has
+	 * already been recorded in dp->hotplug.status, which the first
+	 * detection after the DRM device is registered will pick up.
+	 */
+	if (!dp->bridge.dev)
+		return;
+
 	mutex_lock(&dp->irq_lock);
 	long_hpd = dp->hotplug.long_hpd;
 	mutex_unlock(&dp->irq_lock);

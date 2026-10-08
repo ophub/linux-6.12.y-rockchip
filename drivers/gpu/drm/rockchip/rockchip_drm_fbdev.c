@@ -107,6 +107,31 @@ static const struct drm_fb_helper_funcs rockchip_drm_fb_helper_funcs = {
 	.fb_probe = rockchip_drm_fbdev_create,
 };
 
+/*
+ * Upstream removed the drm_driver.output_poll_changed hook, which used to be
+ * the only way the legacy fbdev helper learned about a connector that appears
+ * after the initial config (drm_kms_helper_hotplug_event() now only notifies
+ * registered drm_clients). Register the fbdev helper as a proper client with a
+ * hotplug callback, otherwise the deferred fbdev setup is never retried and a
+ * display that connects slightly after DRM init (e.g. a Type-C DP sink, whose
+ * alternate mode is negotiated ~1s after the display-subsystem has bound)
+ * stays dark until something performs a modeset from userspace.
+ */
+static int rockchip_drm_fbdev_client_hotplug(struct drm_client_dev *client)
+{
+	struct drm_device *dev = client->dev;
+
+	if (dev->fb_helper)
+		return drm_fb_helper_hotplug_event(dev->fb_helper);
+
+	return 0;
+}
+
+static const struct drm_client_funcs rockchip_drm_fbdev_client_funcs = {
+	.owner		= THIS_MODULE,
+	.hotplug	= rockchip_drm_fbdev_client_hotplug,
+};
+
 int rockchip_drm_fbdev_init(struct drm_device *dev)
 {
 	struct rockchip_drm_private *private = dev->dev_private;
@@ -123,6 +148,14 @@ int rockchip_drm_fbdev_init(struct drm_device *dev)
 
 	drm_fb_helper_prepare(dev, helper, PREFERRED_BPP, &rockchip_drm_fb_helper_funcs);
 
+	ret = drm_client_init(dev, &helper->client, "fbdev",
+			      &rockchip_drm_fbdev_client_funcs);
+	if (ret) {
+		DRM_DEV_ERROR(dev->dev,
+			      "Failed to initialize fbdev client - %d.\n", ret);
+		return ret;
+	}
+
 	ret = drm_fb_helper_init(dev, helper);
 	if (ret < 0) {
 		DRM_DEV_ERROR(dev->dev,
@@ -130,6 +163,8 @@ int rockchip_drm_fbdev_init(struct drm_device *dev)
 			      ret);
 		return ret;
 	}
+
+	drm_client_register(&helper->client);
 
 	ret = drm_fb_helper_initial_config(helper);
 	if (ret < 0) {

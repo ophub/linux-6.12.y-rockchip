@@ -736,7 +736,6 @@
 	status = "okay";
 };
 
-
 &i2c4 {
 	status = "okay";
 	pinctrl-names = "default";
@@ -860,8 +859,6 @@
 		};
 	};
 };
-
-
 
 &dp0 {
 	status = "okay";
@@ -1272,12 +1269,4 @@
 		"", "", "", "",
 		/* GPIO4_D4-D7 */
 		"", "", "", "";
-};
-
-&usbdp_phy0 {
-	status = "okay";
-};
-
-&usbdp_phy1 {
-	status = "okay";
 };

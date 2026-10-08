@@ -5597,12 +5597,21 @@ static void dw_dp_handle_hpd_event(struct dw_dp *dp)
 	if (value & HPD_HOT_PLUG) {
 		dw_dp_dbg(dp, "Hot plug detected\n");
 		dp->hotplug.long_hpd = true;
+		/*
+		 * Latch the plug state here as well. With usbdp_hpd the
+		 * detection relies on the typec mux callback feeding
+		 * hotplug.status, but that callback is registered after the
+		 * display-subsystem has bound and can therefore miss the
+		 * initial status of a sink that was already attached at boot.
+		 */
+		dp->hotplug.status = true;
 		regmap_write(dp->regmap, DPTX_HPD_STATUS, HPD_HOT_PLUG);
 	}
 
 	if (value & HPD_HOT_UNPLUG) {
 		dw_dp_dbg(dp, "Unplug detected\n");
 		dp->hotplug.long_hpd = true;
+		dp->hotplug.status = false;
 		regmap_write(dp->regmap, DPTX_HPD_STATUS, HPD_HOT_UNPLUG);
 	}
 

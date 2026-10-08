@@ -593,7 +593,6 @@
 	status = "okay";
 };
 
-
 /* PCIe */
 
 &combphy0_ps {
@@ -892,8 +891,4 @@
 		"", "", "", "",
 		/* GPIO4_D4-D7 */
 		"", "", "", "";
-};
-
-&usbdp_phy0 {
-	status = "okay";
 };

@@ -1169,23 +1169,8 @@ static bool dw_dp_detect_no_power(struct dw_dp *dp)
 	if (dp->hpd_gpio)
 		return gpiod_get_value_cansleep(dp->hpd_gpio);
 
-	if (dp->usbdp_hpd) {
-		/*
-		 * With usbdp_hpd the sink status is normally fed by the typec
-		 * mux callback. That callback is only registered once the
-		 * display-subsystem has bound, so it can miss the initial DP
-		 * status update of a sink that was already attached (e.g. a
-		 * Type-C DP adapter present at boot) and the port would stay
-		 * disconnected until the next typec event. Only short-circuit
-		 * on it when it reports a connection, otherwise also look at
-		 * the HPD line level.
-		 */
-		if (dp->hotplug.status)
-			return true;
-
-		regmap_read(dp->regmap, DPTX_HPD_STATUS, &value);
-		return FIELD_GET(HPD_STATE, value) == SOURCE_STATE_PLUG;
-	}
+	if (dp->usbdp_hpd)
+		return dp->hotplug.status;
 
 	if (dp->force_hpd)
 		return true;

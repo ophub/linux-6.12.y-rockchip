@@ -120,11 +120,25 @@ static const struct drm_fb_helper_funcs rockchip_drm_fb_helper_funcs = {
 static int rockchip_drm_fbdev_client_hotplug(struct drm_client_dev *client)
 {
 	struct drm_device *dev = client->dev;
+	struct drm_fb_helper *fb_helper = dev->fb_helper;
+	int ret;
 
-	if (dev->fb_helper)
-		return drm_fb_helper_hotplug_event(dev->fb_helper);
+	if (!fb_helper)
+		return 0;
 
-	return 0;
+	ret = drm_fb_helper_hotplug_event(fb_helper);
+
+	/*
+	 * The deferred-setup branch of drm_fb_helper_hotplug_event() returns
+	 * right after the initial config, without the drm_fb_helper_set_par()
+	 * that the normal branch performs to commit the modeset. Do it here so
+	 * the CRTCs are actually programmed when the fbdev is created for a
+	 * connector that appeared after DRM init.
+	 */
+	if (!ret && fb_helper->info)
+		drm_fb_helper_set_par(fb_helper->info);
+
+	return ret;
 }
 
 static const struct drm_client_funcs rockchip_drm_fbdev_client_funcs = {

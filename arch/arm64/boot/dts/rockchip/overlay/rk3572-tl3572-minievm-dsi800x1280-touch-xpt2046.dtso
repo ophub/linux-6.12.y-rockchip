@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM MIPI DSI 屏幕 (800x1280) + 电阻触摸屏使能 overlay
+ *
+ * TL070MIPI 屏接口同时兼容电容/电阻两种触摸模组（原理图 CAP_TS / RES TS），
+ * 实际为二选一。本 overlay 对应【电阻触摸屏 XPT2046 (SPI4, CS1)】方案，
+ * 与 rk3572-tl3572-minievm-dsi800x1280-touch-gt911.dtso 互斥，只能选其一。
+ *
+ * 基础 DTS 中 DSI 屏幕与触摸屏默认关闭，应用本 overlay 后一次性打开：
+ *  - MIPI DSI 屏幕 : TL070MIPI (AML070WXBI4006) 800x1280 面板
+ *                    （含背光与 VP1 输出路由）
+ *  - 触摸屏        : XPT2046 电阻触摸屏 (SPI4)
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* ===== MIPI DSI 屏幕 (800x1280) ===== */
+	fragment@0 {
+		target = <&backlight>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target = <&dsi>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@2 {
+		target = <&dsi_in_vp1>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@3 {
+		target = <&route_dsi>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	/* ===== 电阻触摸屏 XPT2046 (SPI4) ===== */
+	fragment@4 {
+		target = <&xpt2046>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+};

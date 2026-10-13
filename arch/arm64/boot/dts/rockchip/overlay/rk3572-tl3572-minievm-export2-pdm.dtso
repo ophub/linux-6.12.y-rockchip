@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT2 替代组合 overlay：PDM0 麦克风阵列（替代 UART10 + UART3）
+ *
+ * 占用 EXPORT2(CON14)：
+ *   pin 21 = GPIO3_B1 / PDM_CLK0_M4
+ *   pin 17 = GPIO3_A7 / PDM_CLK1_M4
+ *   pin 23 = GPIO3_B3 / PDM_SDI0_M4
+ *   pin 27 = GPIO3_B2 / PDM_SDI1_M4
+ *   pin 8  = GPIO3_A6 / PDM_SDI2_M4
+ *   pin 6  = GPIO3_A5 / PDM_SDI3_M4
+ * 互斥关系：
+ *   EXPORT2 pin19/21 组：默认 = UART10；替代 = PDM(clk0/clk1)
+ *   EXPORT2 pin23/27 组：默认 = UART3 ；替代 = I2C8 / PDM(sdi0/sdi1)
+ * 本 overlay 会关闭默认的 &uart10 与 &uart3，并使能 &pdm0（M4）。
+ * 注意：不可与 export2-i2c8.dtbo 同时叠加（占用 pin23/27）。
+ *       PDM 为输入，实际使用还需在应用/声卡侧配置。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* 关闭默认的 UART10（占用 pin19/21） */
+	fragment@0 {
+		target = <&uart10>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 关闭默认的 UART3（占用 pin23/27） */
+	fragment@1 {
+		target = <&uart3>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 使能 PDM0 到 EXPORT2 pin6/8/17/21/23/27（M4） */
+	fragment@2 {
+		target = <&pdm0>;
+
+		__overlay__ {
+			pinctrl-names = "default", "idle", "clk";
+			pinctrl-0 = <&pdmm4_sdi0_pins &pdmm4_sdi1_pins
+				     &pdmm4_sdi2_pins &pdmm4_sdi3_pins>;
+			pinctrl-1 = <&pdmm4_clk0_idle &pdmm4_clk1_idle>;
+			pinctrl-2 = <&pdmm4_clk0_pins &pdmm4_clk1_pins>;
+			status = "okay";
+		};
+	};
+};

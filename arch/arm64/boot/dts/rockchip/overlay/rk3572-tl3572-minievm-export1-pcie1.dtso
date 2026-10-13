@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT1+2 overlay：PCIE1
+ *
+ * 占用引脚：
+ *   EXPORT1(CON13): pin  6 = PCIE1_REFCLKN
+ *                   pin  8 = PCIE1_REFCLKP
+ *                   pin 12 = PCIE1_TXN
+ *                   pin 14 = PCIE1_TXP
+ *                   pin 18 = PCIE1_RXN
+ *                   pin 20 = PCIE1_RXP
+ *                   pin 23 = GPIO2_D0 (预设为reset-gpios)
+ *                   pin 2  = VDD_3V3_IO
+ *                   pin 9/29/20/22  = GND
+ */
+
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+
+/ {
+	fragment@0 {
+		target = <&pcie1>;
+
+		__overlay__ {
+			reset-gpios = <&gpio2 RK_PD0 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
+	};
+};

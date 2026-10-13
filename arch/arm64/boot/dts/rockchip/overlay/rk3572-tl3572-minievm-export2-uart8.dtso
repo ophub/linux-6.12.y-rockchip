@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT2 替代组合 overlay：UART8（替代默认 SPI1）
+ *
+ * 占用 EXPORT2(CON14)：
+ *   pin 11 = GPIO3_C5 / UART8_RX_M0
+ *   pin 13 = GPIO3_C6 / UART8_TX_M0
+ *   pin 15 = GPIO3_C7 / UART8_RTSN_M0
+ *   pin 14 = GPIO3_D0 / UART8_CTSN_M0
+ * 互斥关系（EXPORT2 pin11/13/14/15 组）：默认 = SPI1；替代 = UART8。
+ * 本 overlay 会关闭默认的 &spi1，并使能 &uart8（M0，含硬件流控）。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* 关闭默认的 SPI1（占用 EXPORT2 pin11/13/14/15） */
+	fragment@0 {
+		target = <&spi1>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 使能 UART8 到 EXPORT2 pin11/13/14/15（M0） */
+	fragment@1 {
+		target = <&uart8>;
+
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart8m0_xfer_pins &uart8m0_rtsn_pins &uart8m0_ctsn_pins>;
+			status = "okay";
+		};
+	};
+};

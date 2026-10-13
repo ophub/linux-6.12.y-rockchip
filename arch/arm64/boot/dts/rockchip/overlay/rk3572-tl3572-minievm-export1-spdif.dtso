@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT1 替代组合 overlay：SPDIF（替代默认 CAN3）
+ *
+ * 占用 EXPORT1(CON13)：
+ *   pin 9  = GPIO1_D5 / SPDIF_TX0_M1   (1.8V 域)
+ *   pin 11 = GPIO1_D6 / SPDIF_TX1_M1   (1.8V 域)
+ * 互斥关系（EXPORT1 pin9/11 组）：
+ *   默认 = CAN3；替代 = SPDIF(tx0/tx1)。
+ * 本 overlay 会关闭默认的 &can3，并使能 &spdif_tx0 / &spdif_tx1（M1）。
+ * 注意：这两个引脚为 1.8V 电平，外接 3.3V 器件需电平转换。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* 关闭默认的 CAN3（占用 EXPORT1 pin9/11） */
+	fragment@0 {
+		target = <&can3>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 使能 SPDIF TX0 -> EXPORT1 pin9（M1） */
+	fragment@1 {
+		target = <&spdif_tx0>;
+
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&spdifm1_tx0_pins>;
+			status = "okay";
+		};
+	};
+
+	/* 使能 SPDIF TX1 -> EXPORT1 pin11（M1） */
+	fragment@2 {
+		target = <&spdif_tx1>;
+
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&spdifm1_tx1_pins>;
+			status = "okay";
+		};
+	};
+};

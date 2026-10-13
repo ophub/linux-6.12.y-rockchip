@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT1+2 替代组合 overlay：SAI1（替代 UART2 / UART5 / I2C4 / UART4 / UART10）
+ *
+ * 占用引脚：
+ *   EXPORT1(CON13): pin 15 = GPIO2_B5 / SAI1_SDO0_M0
+ *                   pin 19 = GPIO2_B6 / SAI1_SDO1_M0
+ *   EXPORT2(CON14): pin  5 = GPIO3_D5 / SAI1_SDI2_M1
+ *                   pin  7 = GPIO3_D4 / SAI1_SDI1_M1
+ *                   pin 16 = GPIO3_B7 / SAI1_SDI0_M1
+ *                   pin 18 = GPIO3_C0 / SAI1_SDO3_M1
+ *                   pin 19 = GPIO3_B0 / SAI1_MCLK_M1
+ *                   pin 26 = GPIO3_D6 / SAI1_SDI3_M1
+ *                   pin 28 = GPIO3_C1 / SAI1_SDO2_M1
+ * 互斥关系（本 overlay 会关闭以下默认项）：
+ *   EXP1 pin15/17/19 组：默认 UART2  → SAI1(sdo0/sdo1)
+ *   EXP2 pin5/7      组：默认 UART5  → SAI1(sdi2/sdi1)
+ *   EXP2 pin16/18    组：默认 I2C4   → SAI1(sdi0/sdo3)
+ *   EXP2 pin19/21    组：默认 UART10 → SAI1(mclk)
+ *   EXP2 pin28/30    组：默认 UART4  → SAI1(sdo2)
+ * 注意：
+ *   1) 本组合占用引脚很多，会关闭 UART2/UART4/UART5/UART10/I2C4；
+ *   2) EXPORT 未引出 SAI1 的 SCLK/LRCK/FS，SAI1 只能提供 MCLK + 多路 SDO/SDI
+ *      （TDM 数据线），须由外部器件自行提供位/帧时钟，否则功能不完整；
+ *   3) 不可与 export2-pdm / export2-can2 / export2-uart8 / export2-i2c3 等叠加（引脚冲突）。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* 关闭默认的 UART2（占用 EXPORT1 pin15/17/19） */
+	fragment@0 {
+		target = <&uart2>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 关闭默认的 UART4（占用 EXPORT2 pin28/30） */
+	fragment@1 {
+		target = <&uart4>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 关闭默认的 UART5（占用 EXPORT2 pin5/7） */
+	fragment@2 {
+		target = <&uart5>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 关闭默认的 UART10（占用 EXPORT2 pin19/21） */
+	fragment@3 {
+		target = <&uart10>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 关闭默认的 I2C4（占用 EXPORT2 pin16/18） */
+	fragment@4 {
+		target = <&i2c4>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 使能 SAI1（EXPORT1 M0 + EXPORT2 M1） */
+	fragment@5 {
+		target = <&sai1>;
+
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&sai1m0_sdo0_pins &sai1m0_sdo1_pins
+				     &sai1m1_sdi0_pins &sai1m1_sdi1_pins
+				     &sai1m1_sdi2_pins &sai1m1_sdi3_pins
+				     &sai1m1_sdo2_pins &sai1m1_sdo3_pins
+				     &sai1m1_mclk_pins>;
+			status = "okay";
+		};
+	};
+};

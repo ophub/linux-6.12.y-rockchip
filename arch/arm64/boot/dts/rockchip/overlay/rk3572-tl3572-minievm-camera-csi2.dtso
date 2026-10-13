@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM Camera (CSI2) 使能 overlay
+ *
+ * 实际场景可能接 0/1/2 个 sensor，故按 CSI1 / CSI2 拆分为两个互不依赖的 overlay：
+ * 本文件对应【CSI2：OV13855 (J16)】。与 rk3572-tl3572-minievm-camera-csi1.dtso
+ * 可单独使用，也可同时使用（对应接 2 个 sensor）。
+ *
+ * 使能 CSI2 传感器通路及共享的 CIF / ISP / VPSS：
+ *  - MIPI Sensor : csi2_dphy0_hw / csi2_dphy1_hw / csi2_dphy3 / mipi2_csi2 / ov13855-csi2
+ *  - CIF         : rkcif / rkcif-mipi-lvds2
+ *  - ISP         : rkisp / rkvpss
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* ===== MIPI Sensor (CSI2) ===== */
+	fragment@0 {
+		target = <&csi2_dphy0_hw>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target = <&csi2_dphy1_hw>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@2 {
+		target = <&csi2_dphy3>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@3 {
+		target = <&mipi2_csi2>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@4 {
+		target = <&ov13855_csi2>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	/* ===== CIF ===== */
+	fragment@5 {
+		target = <&rkcif>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@6 {
+		target = <&rkcif_mipi_lvds2>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@7 {
+		target = <&rkcif_mipi_lvds2_sditf>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@8 {
+		target = <&rkcif_mmu>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	/* ===== ISP / VPSS ===== */
+	fragment@9 {
+		target = <&rkisp>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@10 {
+		target = <&rkisp_mmu>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@11 {
+		target = <&rkisp_vir0>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@12 {
+		target = <&rkisp_vir0_sditf>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@13 {
+		target = <&rkvpss>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@14 {
+		target = <&rkvpss_mmu>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@15 {
+		target = <&rkvpss_vir0>;
+
+		__overlay__ {
+			status = "okay";
+		};
+	};
+};

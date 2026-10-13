@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT2 替代组合 overlay：SPI3（替代默认 UART5）
+ *
+ * 占用 EXPORT2(CON14)：
+ *   pin 5  = GPIO3_D5 / SPI3_MISO_M1
+ *   pin 7  = GPIO3_D4 / SPI3_CLK_M1
+ *   pin 26 = GPIO3_D6 / SPI3_MOSI_M1
+ *   pin 24 = GPIO3_B6 / SPI3_CSN0_M1
+ *   pin 10 = GPIO3_D3 / SPI3_CSN1_M1
+ * 互斥关系（EXPORT2 pin5/7 组）：默认 = UART5；替代 = I2C3 / SPI3。
+ * 本 overlay 会关闭默认的 &uart5，并使能 &spi3（M1，4-wire + 2 个 CS）。
+ * 注意：不可与 export2-i2c3.dtbo 同时叠加（同样占用 pin5/7）。
+ *       pin26 亦为 SAI1_SDI3_M1，不可与 export1-sai1.dtbo 同时使用。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* 关闭默认的 UART5（占用 EXPORT2 pin5/7） */
+	fragment@0 {
+		target = <&uart5>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 使能 SPI3 到 EXPORT2 pin5/7/10/24/26（M1） */
+	fragment@1 {
+		target = <&spi3>;
+
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi3m1_pins &spi3m1_csn0_pins &spi3m1_csn1_pins>;
+			status = "okay";
+		};
+	};
+};

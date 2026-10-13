@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT2 替代组合 overlay：CAN0（替代默认 UART4）
+ *
+ * 占用 EXPORT2(CON14)：
+ *   pin 30 = GPIO3_C4 / CAN0_TX_M3
+ *   pin 28 = GPIO3_C1 / CAN0_RX_M3
+ * 互斥关系（EXPORT2 pin28/30 组）：
+ *   默认 = UART4；替代 = I2C5 / CAN0。
+ * 本 overlay 会关闭默认的 &uart4，并使能 &can0（M3，CAN-FD）。
+ * 注意：不可与 export2-i2c5.dtbo 同时叠加（占用 pin28/30）。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* 关闭默认的 UART4（占用 EXPORT2 pin28/30） */
+	fragment@0 {
+		target = <&uart4>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 使能 CAN0 到 EXPORT2 pin28/30（M3） */
+	fragment@1 {
+		target = <&can0>;
+
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&can0m3_pins>;
+			status = "okay";
+		};
+	};
+};

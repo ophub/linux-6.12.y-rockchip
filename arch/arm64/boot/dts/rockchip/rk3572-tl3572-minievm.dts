@@ -1,0 +1,1842 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2025 Rockchip Electronics Co., Ltd.
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM 设备树
+ *
+ * 说明：
+ *  1. 本文件以 rk3572-evb1-v10.dtsi 为模版，并按 TL3572-MiniEVM 硬件裁剪；
+ *  2. rk3572-evb.dtsi、rk3572-rk806.dtsi、rk3572-evb-input-keymap.dtsi、
+ *     rk3572-evb1-v10.dtsi 以及 rk3572-linux.dtsi 的内容均已直接内联（不使用 #include 方式），
+ *     被裁剪掉的内容已直接删除，未使用 /delete-node/；
+ *  3. 参考 /tmp/tl3572-minievm.dts 并结合 TL3572-MiniEVM 官方原理图
+ *     (TL3572-MiniEVM-A1.0-000-SCH-202609171610.pdf) 增删修改；
+ *  4. 整体节点按 ASCII 排序；
+ *  5. DSI 屏幕、触摸屏、MIPI Sensor、CIF、ISP 等默认关闭，由 overlay 打开。
+ *
+ * TL3572-MiniEVM 硬件要点（摘自原理图）：
+ *   SOM  : SOM-TL3572-S (RK3572)
+ *   PMIC : RK806S-5 @ I2C0 0x23
+ *   ETH0  : RGMII (m0)，PHY MAE0621A-Q3I，地址 0，复位 GPIO0_C1
+ *   ETH1  : RGMII (m1)，PHY MAE0621A-Q3I，地址 1，复位 GPIO0_B7
+ *   USB   : DRD0(Type-C, HUSB311)+USB3.0 HUB(CH634M) / DRD1(USB3.0 Host)
+ *   显示  : MIPI DSI (TL070MIPI) + GT911 电容屏 / XPT2046 电阻屏
+ *   音频  : ES8390 (ES8389 驱动) @ I2C6 0x11
+ *   存储  : eMMC + Micro SD (SDMMC0) + UFS
+ *   调试  : UART0 (CH340) 1500000bps
+ *   扩展口: EXPORT1(CON13)=PCIe1 + 8 路空闲 GPIO；EXPORT2(CON14)=22 路 GPIO3_x
+ *           （详见下方 "EXPORT 扩展口说明"）
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/display/drm_mipi_dsi.h>
+#include <dt-bindings/display/rockchip_vop.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/rk-input.h>
+#include <dt-bindings/input/rk-ir.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/sensor-dev.h>
+#include <dt-bindings/usb/pd.h>
+#include "rk3572.dtsi"
+
+/*
+ * ============================ EXPORT 扩展口说明 ============================
+ * 摘自 TL3572-MiniEVM 原理图 EXPORT 页（Sheet 16）：
+ *   EXPORT1 = CON13，EXPORT2 = CON14，均为 2x15 30pin（FH254030D-16302）。
+ *   EXPORT1 与 PCIe1 共用一个连接器：除 PCIe1 差分对外，另引出 8 路空闲 GPIO。
+ *   EXPORT2 为纯 GPIO 扩展口，引出 22 路 GPIO3_x。
+ *   IO 电平：绝大多数为 3.3V，仅 EXPORT1 的 GPIO1_D5/D6 为 1.8V。
+ *
+ * ---------------------------------------------------------------------------
+ * EXPORT1 (CON13)：
+ *   1 =VDD_5V_IO    2 =VDD_3V3_IO    28=RK806S_PWRON(电源按键)
+ *   GND: 3 4 5 7 10 13 16 21 22 24 26 29 30
+ *   PCIe1: 6 =REFCLKN  8 =REFCLKP  12=TXN  14=TXP  18=RXN  20=RXP
+ *   空闲 GPIO:
+ *     9 =GPIO1_D5 1V8   11=GPIO1_D6 1V8   15=GPIO2_B5 3V3   17=GPIO2_B4 3V3
+ *     19=GPIO2_B6 3V3   23=GPIO2_D0 3V3   25=GPIO4_B7 3V3   27=GPIO4_B6 3V3
+ *
+ * ---------------------------------------------------------------------------
+ * EXPORT2 (CON14)：
+ *   1 =VDD_5V_IO    2 =VDD_3V3_IO    GND: 3 4 9 20 22 29
+ *   空闲 GPIO（全部 3V3）:
+ *     5 =GPIO3_D5   7 =GPIO3_D4   11=GPIO3_C5  13=GPIO3_C6  15=GPIO3_C7
+ *     17=GPIO3_A7   19=GPIO3_B0   21=GPIO3_B1  23=GPIO3_B3  25=GPIO3_B4
+ *     27=GPIO3_B2   6 =GPIO3_A5   8 =GPIO3_A6  10=GPIO3_D3  12=GPIO3_B5
+ *     14=GPIO3_D0   16=GPIO3_B7   18=GPIO3_C0  24=GPIO3_B6  26=GPIO3_D6
+ *     28=GPIO3_C1   30=GPIO3_C4
+ *
+ * ---------------------------------------------------------------------------
+ * 可组成的完整总线（同组引脚复选功能号 Mx 必须一致；下列均为同 Mx）：
+ *   1) PCIe1 (EXPORT1) : 必需；可再任选 1 路空闲 GPIO 作卡的 PERST#。
+ *   2) I2C3  (EXPORT2) : SDA=5(GPIO3_D5/M2)   SCL=7(GPIO3_D4/M2)
+ *   3) I2C8  (EXPORT2) : SCL=23(GPIO3_B3/M3)  SDA=27(GPIO3_B2/M3)
+ *   4) I2C5  (EXPORT2) : SDA=28(GPIO3_C1/M3)  SCL=30(GPIO3_C4/M3)
+ *   5) UART4 (EXPORT2) : TX=30(GPIO3_C4/M0)   RX=28(GPIO3_C1/M0)
+ *   6) UART8 (EXPORT2) : TX=13  RX=11  RTS=15  CTS=14        (均 M0)
+ *   7) UART10(EXPORT2) : TX=21  RX=19  RTS=17  CTS=8         (均 M0)
+ *   8) UART3 (EXPORT2) : TX=23  RX=27  RTS=25  CTS=12        (均 M1)
+ *   9) UART2 (EXPORT1) : TX=15(GPIO2_B5/M1)  RX=17(GPIO2_B4/M1)  RTS=19(GPIO2_B6/M1)
+ *  10) SPI1  (EXPORT2) : CLK=15 MOSI=13 MISO=11 CS0=14       (均 M2)
+ *  11) SPI3  (EXPORT2) : CLK=7  MOSI=26 MISO=5  CS0=24 CS1=10 (均 M1)
+ *  12) CAN0  (EXPORT2) : TX=30(GPIO3_C4/M3)  RX=28(GPIO3_C1/M3)
+ *  13) CAN2  (EXPORT2) : TX=18(GPIO3_C0/M2)  RX=16(GPIO3_B7/M2)
+ *  14) CAN1  (EXPORT1) : TX=27(GPIO4_B6/M1)  RX=25(GPIO4_B7/M1)
+ *  15) CAN3  (EXPORT1) : TX=9 (GPIO1_D5/M0)  RX=11(GPIO1_D6/M0)
+ *  16) PDM   (EXPORT2) : CLK0=21 CLK1=17 SDI0=23 SDI1=27 SDI2=8 SDI3=6 (均 M4)
+ *  17) SAI1  (EXPORT1/2): SDO0=15(EXP1/M0) SDO1=19(EXP1/M0) SDI2=5(EXP2/M1)
+ *                          SDI1=7(EXP2/M1) SDI3=26(EXP2/M1) SDI0=16(EXP2/M1)
+ *  18) SPDIF (EXPORT1/2): TX0=9(EXP1/M1) 或 12(EXP2/M3)
+ *                          TX1=11(EXP1/M1) 或 24(EXP2/M3)  RX0=25(EXP2/M3)
+ *
+ * 取舍提示：同一物理引脚任一时刻只能选一种功能；EXPORT2 的 pin5/7/11/13/14/15、
+ *   pin19/21/23/27、pin28/30 等被多个组合复用，实际使用时需按需求二选一/多选一。
+ *   上述总线仅列出引脚具备的复用能力，如需启用还应在对应控制器节点补 pinctrl 与 status。
+ *
+ * ------------------------ 默认组合（本 base DTS 已设为 okay） ------------------------
+ * 按“最常用/最有价值”原则取舍，base 默认启用如下组合（互不冲突，已配置 pinmux）：
+ *   EXPORT1 : PCIe1 + CAN1(pin25/27) + CAN3(pin9/11) + UART2(pin15/17)
+ *   EXPORT2 : UART5(pin5/7) + SPI1(pin11/13/14/15) + UART10(pin19/21)
+ *             + UART3(pin23/27) + UART4(pin28/30) + I2C4(pin16/18)
+ *
+ * ------------------------ 互斥关系与替代 overlay ------------------------
+ * 每个引脚组只能“默认”或“替代”二选一；替代组合请叠加对应 .dtbo（会自动 disable 冲突项）：
+ *   (a) pin5/7        : 默认 UART5   → 替代 i2c3 / spi3
+ *   (b) pin11/13/14/15: 默认 SPI1   → 替代 uart8
+ *   (c) pin19/21      : 默认 UART10  → 替代 pdm(clk0/clk1)
+ *   (d) pin23/27      : 默认 UART3   → 替代 i2c8 / pdm(sdi0/sdi1)
+ *   (e) pin28/30      : 默认 UART4   → 替代 i2c5 / can0
+ *   (f) pin16/18      : 默认 I2C4    → 替代 can2 / sai1
+ *   (g) EXP1 pin9/11  : 默认 CAN3   → 替代 spdif(tx0/tx1)
+ *   (h) EXP1 pin15/17/19: 默认 UART2 → 替代 sai1(sdo0/sdo1)
+ * 对应 overlay（overlay/ 目录，逐个叠加）：
+ *   rk3572-tl3572-minievm-export2-i2c3.dtbo    rk3572-tl3572-minievm-export2-spi3.dtbo
+ *   rk3572-tl3572-minievm-export2-uart8.dtbo   rk3572-tl3572-minievm-export2-pdm.dtbo
+ *   rk3572-tl3572-minievm-export2-i2c8.dtbo    rk3572-tl3572-minievm-export2-i2c5.dtbo
+ *   rk3572-tl3572-minievm-export2-can0.dtbo    rk3572-tl3572-minievm-export2-can2.dtbo
+ *   rk3572-tl3572-minievm-export1-spdif.dtbo   rk3572-tl3572-minievm-export1-sai1.dtbo
+ *   注意：占用同一引脚组的替代 overlay 不可同时叠加（如 i2c3 与 spi3 都占 pin5/7）。
+ * =========================================================================
+ */
+
+/ {
+	model = "Tronlong TL3572 MiniEVM";
+	compatible = "tronlong,tl3572-minievm", "rockchip,rk3572-evb1-v10", "rockchip,rk3572";
+
+	/* SARADC_IN0：BOOT/Maskrom 按键（原理图 KEY2） */
+	adc-keys1 {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+
+		user_key0 {
+			label = "user-key0";
+			linux,code = <KEY_PROG3>;
+			press-threshold-microvolt = <1750>;
+		};
+	};
+
+	/* SARADC_IN1：RECOVERY/USER_KEY1 按键（原理图 KEY4） */
+	adc-keys2 {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+
+		user_key1 {
+			label = "user-key1";
+			linux,code = <KEY_PROG1>;
+			press-threshold-microvolt = <1750>;
+		};
+	};
+
+	aliases {
+		mmc0 = &sdhci;
+		mmc1 = &sdmmc0;
+	};
+
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm1_6ch_5 0 25000 0>;
+		brightness-levels = <
+			  0  20  20  21  21  22  22  23
+			 23  24  24  25  25  26  26  27
+			 27  28  28  29  29  30  30  31
+			 31  32  32  33  33  34  34  35
+			 35  36  36  37  37  38  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255
+		>;
+		default-brightness-level = <200>;
+	};
+
+	/* ES8390 音频声卡（使用 ES8389 驱动），CPU DAI 为 SAI0_M1 */
+	es8390_sound: es8390-sound {
+		status = "okay";
+		compatible = "rockchip,multicodecs-card";
+		rockchip,card-name = "rockchip-es8390";
+		rockchip,format = "i2s";
+		rockchip,mclk-fs = <256>;
+		rockchip,cpu = <&sai0>;
+		rockchip,codec = <&es8390>;
+		hp-det-gpio = <&gpio4 RK_PB4 GPIO_ACTIVE_HIGH>;	/* GPIO4_B4: HP_DET_L */
+		hp-con-gpio = <&gpio0 RK_PD3 GPIO_ACTIVE_HIGH>;	/* GPIO0_D3: PHONE_CTL */
+		rockchip,pre-power-on-delay-ms = <30>;
+		rockchip,post-power-down-delay-ms = <40>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hp_det>;
+		rockchip,audio-routing =
+			"Headphone", "HPOL",
+			"Headphone", "HPOR";
+	};
+
+	/* 调试串口使用 UART0，波特率 1500000 (官方固件采用115200bps（原理图 CH340） */
+	fiq-debugger {
+		compatible = "rockchip,fiq-debugger";
+		rockchip,serial-id = <0>;
+		rockchip,wake-irq = <0>;
+		/* If enable uart uses irq instead of fiq */
+		rockchip,irq-mode-enable = <1>;
+		rockchip,baudrate = <1500000>;	/* Only 115200 and 1500000 */
+		interrupts = <GIC_SPI 340 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&uart0m0_xfer_pins>;
+		status = "okay";
+	};
+
+	firmware {
+		optee: optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};
+
+	hdmi_sound: hdmi-sound {
+		compatible = "rockchip,hdmi";
+		rockchip,mclk-fs = <128>;
+		rockchip,card-name = "rockchip-hdmi";
+		rockchip,cpu = <&sai4>;
+		rockchip,codec = <&hdmi>;
+		rockchip,jack-det;
+	};
+
+	/*
+	 * LED：
+	 *  - som_led  : 心跳灯，挂载 SOM 上 (GPIO0_C3)
+	 *  - user_led1: 用户灯 (GPIO0_B6 / LED1)
+	 *  - user_led2: 用户灯 (GPIO4_B5 / LED2)
+	 */
+	leds: leds {
+		compatible = "gpio-leds";
+		status = "okay";
+		pinctrl-0 = <&som_led>;
+
+		som_led {
+			label = "heartbeat";
+			gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+			default-state = "off";
+		};
+		user_led1 {
+			label = "user-led1";
+			gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+		};
+		user_led2 {
+			label = "user-led2";
+			gpios = <&gpio4 RK_PB5 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+		};
+	};
+
+	/* GPIO2_B2 软件 PWM 背光（TL070MIPI LCD） */
+	bl_pwm: pwm@0 {
+		compatible = "pwm-gpio";
+		#pwm-cells = <3>;
+		gpios = <&gpio2 RK_PB2 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	/*
+	 * Type-C SBU 切换开关 CH482D：
+	 * 选择脚 GPIO0_D2 (USB_DRD0_SWITCH)
+	 */
+	usb3_switch: usb3-switch {
+		compatible = "broadchip,bct4360", "gpio-sbu-mux";
+		select-gpios = <&gpio0 RK_PD2 GPIO_ACTIVE_HIGH>;
+		orientation-switch;
+	};
+
+	vdd12v_dcin: regulator-vdd12v-dcin {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+		regulator-name = "vdd12v_dcin";
+	};
+
+	/* to: tl3572-som core board */
+	vdd5v0_som: regulator-vdd5v0-som {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-name = "vdd5v0_som";
+		vin-supply = <&vdd12v_dcin>;
+	};
+
+	/* vdd3v3 som output to mainboard */
+	vdd3v3_som_out: regulator-vdd3v3-som-out {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-name = "vdd3v3_som_out";
+		vin-supply = <&vdd5v0_som>;
+	};
+
+	/* to: tl3572-minievm main board 5v0
+	 * enable: vdd3v3_som_out
+	 */
+	vdd5v0_main: regulator-vdd5v0-main {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-name = "vdd5v0_main";
+		vin-supply = <&vdd12v_dcin>;
+	};
+
+	/* to: tl3572-minievm main board 3v3
+	 * enable: vdd3v3_som_out
+	 */
+	vdd3v3_main: regulator-vdd3v3-main {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-name = "vdd3v3_main";
+		vin-supply = <&vdd12v_dcin>;
+	};
+
+	/* to: tl3572-minievm main board 1v8
+	 * enable: vdd3v3_som_out
+	 */
+	vdd1v8_main: regulator-vdd1v8-main {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-name = "vdd1v8_main";
+		vin-supply = <&vdd12v_dcin>;
+	};
+
+	/* Type-C VBUS 5V：由 GPIO0_C2 (USB_DRD0_PWREN) 使能 */
+	vbus5v0_typec: vbus5v0-typec {
+		compatible = "regulator-fixed";
+		regulator-name = "vbus5v0_typec";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
+		vin-supply = <&vdd5v0_main>;
+	};
+
+	vcc_3v3_s0: vcc-3v3-s0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_3v3_s0";
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vdd3v3_main>;
+	};
+
+	vcc_ldo_s3: vcc-ldo-s3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_ldo_s3";
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-min-microvolt = <2100000>;
+		regulator-max-microvolt = <2100000>;
+		vin-supply = <&vdd3v3_som_out>;
+	};
+
+	/* LCD 3V3：使能脚为 GPIO2_B7 (BL_EN) */
+	vcc3v3_lcd: vcc3v3-lcd {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_lcd";
+		regulator-boot-on;
+		enable-active-high;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
+		vin-supply = <&vdd3v3_main>;
+	};
+
+	vcc3v3_rtc_s5: vcc3v3-rtc-s5 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_rtc_s5";
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&vdd3v3_main>;
+	};
+
+	vcc5v0_device: vcc5v0-device {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_device";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&vdd5v0_main>;
+	};
+
+	vcc5v0_sys_s5: vcc5v0-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_sys_s5";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&vdd5v0_main>;
+	};
+
+	vdd2l_0v9_ddr_s3: vdd2l-0v9-ddr-s3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd2l_0v9_ddr_s3";
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-min-microvolt = <900000>;
+		regulator-max-microvolt = <900000>;
+		vin-supply = <&vdd3v3_som_out>;
+	};
+};
+
+/* DSI 屏幕背光，默认关闭，由 overlay (rk3572-tl3572-minievm-dsi800x1280-touch-*.dtso) 打开 */
+&backlight {
+	pwms = <&bl_pwm 0 25000 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&bl_en_pins>;
+	status = "disabled";
+};
+
+&can1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&can1m1_pins>;
+	status = "okay";
+};
+
+&can3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&can3m0_pins>;
+	status = "okay";
+};
+
+&combphy0_psu {
+	status = "okay";
+};
+
+&combphy1_psu {
+	status = "okay";
+};
+
+&combphy2_ps {
+	status = "okay";
+};
+
+&cpu_b0 {
+	cpu-supply = <&vdd_cpu_big_s0>;
+};
+
+&cpu_l0 {
+	cpu-supply = <&vdd_cpu_lit_s0>;
+};
+
+&cpu_l4 {
+	cpu-supply = <&vdd_cpu_lit_s0>;
+};
+
+&crypto {
+	status = "okay";
+};
+
+/* CSI#1：csi2_dphy0 (DPHY0 full mode, 4-lane) —— OV13855 @ CSI1
+ * 默认关闭，由 overlay (rk3572-tl3572-minievm-camera-csi1.dtso) 打开
+ */
+&csi2_dphy0 {
+	status = "disabled";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi_in_ov13855_csi1: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&ov13855_csi1_out0>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			csidphy0_out: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&mipi0_csi2_input>;
+			};
+		};
+	};
+};
+
+&csi2_dphy0_hw {
+	status = "disabled";
+};
+
+&csi2_dphy1_hw {
+	status = "disabled";
+};
+
+/* CSI#2：csi2_dphy3 (DPHY1 full mode, 4-lane) —— OV13855 @ CSI2
+ * 默认关闭，由 overlay (rk3572-tl3572-minievm-camera-csi2.dtso) 打开
+ */
+&csi2_dphy3 {
+	status = "disabled";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi_in_ov13855_csi2: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&ov13855_csi2_out0>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			csidphy3_out: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&mipi2_csi2_input>;
+			};
+		};
+	};
+};
+
+&dfi {
+	status = "okay";
+};
+
+&display_subsystem {
+	status = "okay";
+	memory-region = <&drm_logo>, <&drm_cubic_lut>;
+	memory-region-names = "drm-logo", "drm-cubic-lut";
+	devfreq = <&dmc>;
+};
+
+&dmc {
+	center-supply = <&vdd_ddr_s0>;
+	mem-supply = <&vdd_logic_s0>;
+	status = "okay";
+};
+
+/* MIPI DSI：TL070MIPI (AML070WXBI4006)，4-lane，800x1280
+ * 默认关闭，由 overlay (rk3572-tl3572-minievm-dsi800x1280-touch-*.dtso) 打开
+ */
+&dsi {
+	status = "disabled";
+	//rockchip,lane-rate = <1000>;
+
+	dsi_panel: panel@0 {
+		status = "okay";
+		compatible = "simple-panel-dsi";
+		reg = <0>;
+		backlight = <&backlight>;
+		reset-gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_LOW>;	/* GPIO0_B4: MIPI_DSI_RST_L */
+		//enable-gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
+		power-supply = <&vcc3v3_lcd>;
+		/* Fix "Expected bpc in {6,8} but got: 0" warning */
+		bpc = <8>;
+		reset-delay-ms = <60>;
+		enable-delay-ms = <60>;
+		prepare-delay-ms = <60>;
+		unprepare-delay-ms = <60>;
+		disable-delay-ms = <60>;
+		width-mm = <68>;
+		height-mm = <121>;
+		dsi,flags = <(MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+			      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET)>;
+		dsi,format = <MIPI_DSI_FMT_RGB888>;
+		dsi,lanes  = <4>;
+		panel-init-sequence = [
+			05 1E 01 01
+			23 00 02 EE 50
+			29 00 03 EA 85 55
+			23 00 02 30 00
+			23 00 02 31 00
+			29 00 03 90 50 15
+			23 00 02 24 20
+			23 00 02 99 00
+			23 00 02 79 00
+			23 00 02 95 74
+			23 00 02 7A 20
+			23 00 02 97 09
+			23 00 02 7D 08
+			23 00 02 56 83
+			23 00 02 EE 60
+			23 00 02 30 01
+			23 00 02 27 22
+			23 00 02 3A 24
+			23 00 02 3B 00
+			23 00 02 3C 1A
+			23 00 02 3D 11
+			23 00 02 3E 93
+			23 00 02 42 64
+			23 00 02 43 64
+			23 00 02 44 0B
+			23 00 02 46 4E
+			23 00 02 8B 90
+			23 00 02 8D 45
+			23 00 02 91 11
+			23 00 02 92 11
+			23 00 02 93 9F
+			23 00 02 9A 00
+			23 00 02 9C 80
+			29 00 06 47 0F 24 2C 39 36
+			29 00 06 5A 0F 24 2C 39 36
+			29 00 06 4C 4A 40 51 31 2F
+			29 00 06 51 2D 10 25 1F 30
+			29 00 05 56 37 46 5B 7F
+			29 00 05 69 37 46 5B 7F
+			23 00 02 EE 70
+			29 00 05 00 03 07 00 01
+			29 00 05 04 08 0C 55 01
+			29 00 03 0C 05 3D
+			29 00 06 10 05 08 00 01 05
+			29 00 06 15 00 15 0D 08 00
+			29 00 03 29 05 3D
+			29 00 06 60 3C 3C 07 05 17
+			29 00 06 65 15 13 11 01 03
+			29 00 06 6A 3C 3C 3C 3C 3C
+			29 00 06 6F 3C 3C 3C 3C 3C
+			29 00 03 74 3C 3C
+			29 00 06 80 3C 3C 06 04 16
+			29 00 06 85 14 12 10 00 02
+			29 00 06 8A 3C 3C 3C 3C 3C
+			29 00 06 8F 3C 3C 3C 3C 3C
+			29 00 03 94 3C 3C
+			29 00 03 EA 00 00
+			23 00 02 EE 00
+			05 78 01 11
+			05 1E 01 29
+		];
+
+		panel-exit-sequence = [
+			05 00 01 28
+			05 00 01 10
+		];
+
+		disp_timings0: display-timings {
+			native-mode = <&dsi_timing0>;
+			dsi_timing0: timing0 {
+				clock-frequency = <67200000>;
+				hactive = <800>;
+				vactive = <1280>;
+				hfront-porch = <80>;
+				hsync-len = <20>;
+				hback-porch = <20>;
+				vfront-porch = <15>;
+				vsync-len = <6>;
+				vback-porch = <8>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <1>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel_in_dsi: endpoint {
+					remote-endpoint = <&dsi_out_panel>;
+				};
+			};
+		};
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			dsi_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi>;
+			};
+		};
+	};
+};
+
+/* DSI 输出接 VP1，默认关闭，由 overlay 打开 */
+&dsi_in_vp1 {
+	status = "disabled";
+};
+
+&gmac0 {
+	clock_in_out = "output";
+
+	phy-handle = <&rgmii_phy_0>;
+	phy-mode = "rgmii-rxid";
+
+	label = "eth0";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth0_miim_pins
+		     &eth0_tx_bus2_pins
+		     &eth0_rx_bus2_pins
+		     &eth0_rgmii_bus_pins
+		     &eth0_rgmii_clk_pins>;
+
+	tx_delay = <0x26>;
+	/* rx_delay = <0x3f>; */
+
+	status = "okay";
+};
+
+&gmac1 {
+	clock_in_out = "output";
+
+	phy-handle = <&rgmii_phy_1>;
+	phy-mode = "rgmii-rxid";
+
+	label = "eth1";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth1m1_miim_pins
+		     &eth1m1_tx_bus2_pins
+		     &eth1m1_rx_bus2_pins
+		     &eth1m1_rgmii_clk_pins
+		     &eth1m1_rgmii_bus_pins>;
+
+	tx_delay = <0x25>;
+	/* rx_delay = <0x3f>; */
+
+	status = "okay";
+};
+
+&gpu {
+	mali-supply = <&vdd_gpu_s0>;
+	status = "okay";
+};
+
+/* HDMI OUT：使能脚 GPIO0_D1 (HDMI_TX_ON_H)，HPD 走 HDMI_TX0 (GPIO4_B1) */
+&hdmi {
+	enable-gpios = <&gpio0 RK_PD1 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&hdmi_txm0_hpdin_pins
+		     &hdmi_txm0_ddc_pins
+		     &hdmi_txm0_cec_pins>;
+	status = "okay";
+};
+
+&hdmi_in_vp0 {
+	status = "okay";
+};
+
+&hdptxphy {
+	status = "okay";
+};
+
+/* PMIC RK806S-5 */
+&i2c0 {
+	status = "okay";
+	clock-frequency = <400000>;
+
+	rk806: pmic@23 {
+		compatible = "rockchip,rk806";
+		reg = <0x23>;
+
+		interrupt-parent = <&gpio0>;
+		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
+
+		/* 2800mv-3500mv */
+		low_voltage_threshold = <3000>;
+		/* 2700mv-3400mv */
+		shutdown_voltage_threshold = <2700>;
+		/* 140 160 */
+		shutdown_temperture_threshold = <160>;
+		hotdie_temperture_threshold = <115>;
+		/* shutdown sequence */
+		shutdown-sequence = <2 2 2 0 2 0 2 1 1 2
+					2 2 2 2 2
+					1 0 1 0 0 2>;
+
+		/* low power forced shutdown sequence */
+		vb-shutdown-sequence = <2 2 2 0 2 0 2 1 1 2
+					2 2 2 2 2
+					1 0 1 0 0 2>;
+
+		/*
+		 * 0: restart PMU;
+		 * 1: reset all the power off reset registers,
+		 *    forcing the state to switch to ACTIVE mode;
+		 * 2: Reset all the power off reset registers,
+		 *    forcing the state to switch to ACTIVE mode,
+		 *    and simultaneously pull down the RESETB PIN for 5mS before releasing
+		 */
+		pmic-reset-func = <1>;
+		/* buck5 external feedback resister disable */
+		buck5-feedback-disable;
+
+		vcc1-supply = <&vcc5v0_sys_s5>;
+		vcc2-supply = <&vcc5v0_sys_s5>;
+		vcc3-supply = <&vcc5v0_sys_s5>;
+		vcc4-supply = <&vcc5v0_sys_s5>;
+		vcc5-supply = <&vcc5v0_sys_s5>;
+		vcc6-supply = <&vcc5v0_sys_s5>;
+		vcc7-supply = <&vcc5v0_sys_s5>;
+		vcc8-supply = <&vcc5v0_sys_s5>;
+		vcc9-supply = <&vcc5v0_sys_s5>;
+		vcc10-supply = <&vcc5v0_sys_s5>;
+		vcc11-supply = <&vcc_ldo_s3>;
+		vcc12-supply = <&vcc5v0_sys_s5>;
+		vcc13-supply = <&vcc_ldo_s3>;
+		vcc14-supply = <&vcc_ldo_s3>;
+		vcca-supply = <&vcc5v0_sys_s5>;
+
+		pwrkey {
+			status = "okay";
+		};
+
+		regulators {
+			vdd_cpu_lit_s0: DCDC_REG1 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-init-microvolt = <850000>;
+				regulator-min-microvolt = <550000>;
+				regulator-max-microvolt = <950000>;
+				regulator-ramp-delay = <12500>;
+				regulator-name = "vdd_cpu_lit_s0";
+				regulator-enable-ramp-delay = <400>;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdd_npu_s0: DCDC_REG2 {
+				regulator-boot-on;
+				regulator-init-microvolt = <750000>;
+				regulator-min-microvolt = <550000>;
+				regulator-max-microvolt = <950000>;
+				regulator-ramp-delay = <12500>;
+				regulator-name = "vdd_npu_s0";
+				regulator-enable-ramp-delay = <400>;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdd_cpu_big_s0: DCDC_REG3 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-init-microvolt = <850000>;
+				regulator-min-microvolt = <550000>;
+				regulator-max-microvolt = <950000>;
+				regulator-ramp-delay = <12500>;
+				regulator-name = "vdd_cpu_big_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+					regulator-suspend-microvolt = <750000>;
+				};
+			};
+
+			vcc_3v3_s3: DCDC_REG4 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-name = "vcc_3v3_s3";
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <3300000>;
+				};
+			};
+
+			vdd_gpu_s0: DCDC_REG5 {
+				regulator-boot-on;
+				regulator-init-microvolt = <750000>;
+				regulator-min-microvolt = <550000>;
+				regulator-max-microvolt = <900000>;
+				regulator-ramp-delay = <12500>;
+				regulator-name = "vdd_gpu_s0";
+				regulator-enable-ramp-delay = <400>;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vddq_ddr_s0: DCDC_REG6 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-name = "vddq_ddr_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdd_logic_s0: DCDC_REG7 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-init-microvolt = <750000>;
+				regulator-min-microvolt = <550000>;
+				regulator-max-microvolt = <800000>;
+				regulator-name = "vdd_logic_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vcc_1v8: DCDC_REG8 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-name = "vcc_1v8";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+					regulator-suspend-microvolt = <1800000>;
+				};
+			};
+
+			vdd2_ddr_s3: DCDC_REG9 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-name = "vdd2_ddr_s3";
+				regulator-state-mem {
+					regulator-on-in-suspend;
+				};
+			};
+
+			vdd_ddr_s0: DCDC_REG10 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <700000>;
+				regulator-max-microvolt = <850000>;
+				regulator-name = "vdd_ddr_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+					regulator-suspend-microvolt = <800000>;
+				};
+			};
+
+			vcc_1v8_s3: PLDO_REG1 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-name = "vcc_1v8_s3";
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <1800000>;
+				};
+			};
+
+			vccio_1v8_s0: PLDO_REG2 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-name = "vccio_1v8_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdda_1v2_s0: PLDO_REG3 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-name = "vdda_1v2_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vcc3v3_sd_s0: PLDO_REG4 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-name = "vcc3v3_sd_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vccio_sd_s0: PLDO_REG5 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-name = "vccio_sd_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vcca1v8_pldo6_s3: PLDO_REG6 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-name = "vcca1v8_pldo6_s3";
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <1800000>;
+				};
+			};
+
+			vdd_0v75_s3: NLDO_REG1 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <750000>;
+				regulator-max-microvolt = <750000>;
+				regulator-name = "vdd_0v75_s3";
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <750000>;
+				};
+			};
+
+			vdda_0v85_s0: NLDO_REG2 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <850000>;
+				regulator-name = "vdd_0v85_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdda_hdmi_s0: NLDO_REG3 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <837500>;
+				regulator-max-microvolt = <837500>;
+				regulator-name = "vdda_hdmi_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdda_ddr_pll_s0: NLDO_REG4 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <850000>;
+				regulator-name = "vdda_ddr_pll_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+
+			vdda_0v75_s0: NLDO_REG5 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <750000>;
+				regulator-max-microvolt = <750000>;
+				regulator-name = "vdda_0v75_s0";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
+			};
+		};
+	};
+};
+
+/*
+ * I2C1(m0)：
+ *  - HUSB311 USB PD 控制器 (0x4e)
+ *  - OV13855 摄像头 @ CSI1 (J15, 0x10)
+ */
+&i2c1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1m0_xfer_pins>;
+
+	usbc0: husb311@4e {
+		compatible = "hynetek,husb311";
+		reg = <0x4e>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <RK_PB0 IRQ_TYPE_LEVEL_LOW>;	/* GPIO2_B0: USB_OTG_INTn */
+		pinctrl-names = "default";
+		pinctrl-0 = <&usbc0_int>;
+		vbus-supply = <&vbus5v0_typec>;
+		status = "okay";
+
+		usb_con0: connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+			data-role = "dual";
+			power-role = "dual";
+			try-power-role = "sink";
+			op-sink-microwatt = <1000000>;
+			orientation-switch = <&usb3_switch &u2phy0>;
+			usb-role-switch = <&usb_drd0_dwc3>;
+
+			sink-pdos = <PDO_FIXED(5000, 1000, PDO_FIXED_DATA_SWAP | PDO_FIXED_USB_COMM | PDO_FIXED_EXTPOWER | PDO_FIXED_DUAL_ROLE)>;
+			source-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_DATA_SWAP | PDO_FIXED_USB_COMM | PDO_FIXED_EXTPOWER | PDO_FIXED_DUAL_ROLE)>;
+		};
+	};
+
+	/* ===== OV13855 on CSI1 (J15)，默认关闭，由 overlay 打开 ===== */
+	ov13855_csi1: ov13855-csi1@10 {
+		compatible = "ovti,ov13855";
+		status = "disabled";
+		reg = <0x10>;
+		clocks = <&cru REF_CLK0_OUT_PLL>;
+		clock-names = "xvclk";
+		pinctrl-names = "default";
+		pinctrl-0 = <&ref_clk0_clk0_pins &csi1_reset>;
+		reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_HIGH>;
+		rockchip,camera-module-index = <0>;
+		rockchip,camera-module-facing = "back";
+		rockchip,camera-module-name = "RK-CMK-8M-2-v1";
+		rockchip,camera-module-lens-name = "CK8401";
+
+		port {
+			ov13855_csi1_out0: endpoint {
+				remote-endpoint = <&mipi_in_ov13855_csi1>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
+};
+
+/* I2C4_M3：引出到 EXPORT2 (SDA=GPIO3_B7 / SCL=GPIO3_C0) */
+&i2c4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c4m3_xfer_pins>;
+	clock-frequency = <100000>;
+	status = "okay";
+};
+
+/*
+ * I2C6(m0)：
+ *  - ES8390 音频 codec (0x11)
+ *  - GT911 电容触摸屏 (0x5d)
+ *  - OV13855 摄像头 @ CSI2 (J16, 0x10)
+ */
+&i2c6 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c6m0_xfer_pins>;
+
+	es8390: es8390@11 {
+		status = "okay";
+		#sound-dai-cells = <0>;
+		compatible = "everest,es8389";
+		reg = <0x11>;
+		clocks = <&mclkout_sai0>;
+		clock-names = "mclk";
+		assigned-clocks = <&mclkout_sai0>;
+		assigned-clock-rates = <12288000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sai0m1_mclk_pins>;
+	};
+
+	/* GT911 电容触摸（MIPI LCD），默认关闭，由 overlay 打开 */
+	gt911: touchscreen@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		status = "disabled";
+		interrupt-parent = <&gpio2>;
+		interrupts = <RK_PC4 IRQ_TYPE_EDGE_FALLING>;	/* GPIO2_C4: MIPI_DSI_CAP_TS_nINT */
+		pinctrl-names = "default";
+		pinctrl-0 = <&gt911_int>;
+	};
+
+	/* ===== OV13855 on CSI2 (J16)，默认关闭，由 overlay 打开 ===== */
+	ov13855_csi2: ov13855-csi2@10 {
+		compatible = "ovti,ov13855";
+		status = "disabled";
+		reg = <0x10>;
+		clocks = <&cru CAM_CLK1_OUT_IOUT>;
+		clock-names = "xvclk";
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_clk1m0_clk1_pins>;
+		reset-gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_HIGH>;
+		rockchip,camera-module-index = <1>;
+		rockchip,camera-module-facing = "back";
+		rockchip,camera-module-name = "RK-CMK-8M-2-v1";
+		rockchip,camera-module-lens-name = "CK8401";
+
+		port {
+			ov13855_csi2_out0: endpoint {
+				remote-endpoint = <&mipi_in_ov13855_csi2>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
+};
+
+&iep {
+	status = "okay";
+};
+
+&iep_mmu {
+	status = "okay";
+};
+
+&jpeg_mmu {
+	status = "okay";
+};
+
+&jpegd {
+	status = "okay";
+};
+
+&jpege {
+	status = "okay";
+};
+
+/* 调高 littlecore 温度保护门限 */
+&littlecore_thermal {
+	trips {
+		threshold: trip-point-0 {
+			temperature = <115000>;
+			hysteresis = <2000>;
+			type = "passive";
+		};
+
+		target: trip-point-1 {
+			temperature = <115000>;
+			hysteresis = <2000>;
+			type = "passive";
+		};
+
+		littlecore_crit: littlecore-crit {
+			/* millicelsius */
+			temperature = <115000>;
+			/* millicelsius */
+			hysteresis = <2000>;
+			type = "critical";
+		};
+	};
+};
+
+&mdio0 {
+	rgmii_phy_0: phy@0 {
+		/* MaxIO MAE0621A/B-Q3C(I) Gigabit Ethernet */
+		compatible = "ethernet-phy-id7b74.4412";
+		reg = <0x0>;
+		clocks = <&cru REFCLKO25M_GMAC0_OUT>;
+
+		reset-assert-us = <20000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&mdio1 {
+	rgmii_phy_1: phy@1 {
+		/* MaxIO MAE0621A/B-Q3C(I) Gigabit Ethernet */
+		compatible = "ethernet-phy-id7b74.4412";
+		reg = <0x1>;
+		clocks = <&cru REFCLKO25M_GMAC1_OUT>;
+
+		reset-assert-us = <20000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_LOW>;
+	};
+};
+
+/* MIPI CSI2 */
+&mipi0_csi2 {
+	status = "disabled";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi0_csi2_input: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&csidphy0_out>;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi0_csi2_output: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&cif_mipi_in0>;
+			};
+		};
+	};
+};
+
+&mipi2_csi2 {
+	status = "disabled";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi2_csi2_input: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&csidphy3_out>;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi2_csi2_output: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&cif_mipi3_in0>;
+			};
+		};
+	};
+};
+
+&mipitx_dphy {
+	status = "okay";
+};
+
+&mpp_srv {
+	status = "okay";
+};
+
+/*
+ * PCIe1：EXPORT1 导出（PCIE1_REFCLK + PCIE1_TX/RX 差分对），使能供外接 PCIe 设备使用。
+ * PCIe1 复位（PERST#）引脚说明：
+ * 官方原理图未定义 PCIe1 专用复位信号，EXPORT1/EXPORT2 也未引出 PERST#。
+ * 若需对 EXPORT1 外接的 PCIe 卡做硬件复位，可在下列空闲 GPIO 中任选一个飞线到卡的
+ * PERST#（低有效），再于本节点补 reset-gpios = <&gpioX RK_PYn GPIO_ACTIVE_LOW>。
+ *
+ * EXPORT1(CON13, 30pin) 可作 PERST# 的 GPIO —— 注意它们同时是 EXPORT1 的复用引脚，
+ * 本 base 的“默认组合”已占用其中 7 个（见文件头 EXPORT 说明），要用须先关闭对应总线：
+ *   pin 9  = GPIO1_D5 (AR18) 1V8  ← 默认 CAN3_TX    （已占用）
+ *   pin 11 = GPIO1_D6 (1AF7) 1V8  ← 默认 CAN3_RX    （已占用）
+ *   pin 15 = GPIO2_B5 (B4)   3V3  ← 默认 UART2_TX   （已占用）
+ *   pin 17 = GPIO2_B4 (1B2)  3V3  ← 默认 UART2_RX   （已占用）
+ *   pin 19 = GPIO2_B6 (1D3)  3V3  ← 默认 UART2_RTS  （已占用）
+ *   pin 25 = GPIO4_B7 (AN32) 3V3  ← 默认 CAN1_RX    （已占用）
+ *   pin 27 = GPIO4_B6 (AP33) 3V3  ← 默认 CAN1_TX    （已占用）
+ *   ★ pin 23 = GPIO2_D0 (A8) 3V3  ← 默认空闲，推荐作 PERST# 首选（3V3、无需改总线）
+ *   注：叠加 export1-spdif.dtbo 会再占用 pin9/11；export1-sai1.dtbo 会再占用 pin15/19。
+ *   EXPORT1 其余引脚：1=VDD_5V_IO, 2=VDD_3V3_IO, 28=RK806S_PWRON,
+ *   6/8=PCIE1_REFCLK, 12/14=PCIE1_TX, 18/20=PCIE1_RX, 其余为 GND。
+ *
+ * EXPORT2(CON14, 30pin) 全部为通用 GPIO（3V3），可作 PERST# 备选：
+ *   默认组合已占用 pin 5/7/11/13/14/15/16/18/19/21/23/27/28/30；
+ *   默认仍空闲、可直接作 PERST# 的引脚：
+ *     pin 6 =GPIO3_A5  8 =GPIO3_A6  10=GPIO3_D3  12=GPIO3_B5
+ *     pin 17=GPIO3_A7  24=GPIO3_B6  25=GPIO3_B4  26=GPIO3_D6
+ *   （叠加替代 overlay 后占用会变化，详见文件头 EXPORT 说明与各 overlay。）
+ *   EXPORT2 其余引脚：1=VDD_5V_IO, 2=VDD_3V3_IO, 3/4/9/20/22/29=GND。
+ *
+ * 电平：标准 PCIe 卡 PERST# 为 3.3V 低有效，优先选 3V3 域 GPIO；
+ *   EXPORT1 的 pin9/pin11(GPIO1_D5/D6) 属 1V8 域，驱动 3.3V PERST# 需加电平转换。
+ *
+ * SoC 端 pcie1 已含 CRU 内部复位（SRST_RESETN_PCIE1_POWER_UP / SRST_PRESETN_PCIE1），
+ * 无外部 PERST 亦可正常枚举，故默认不添加 reset-gpios。
+ */
+&pcie1 {
+	rockchip,skip-scan-in-resume;
+	status = "disabled";
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+
+	backlight_pins {
+		bl_en_pins: bl-en-pins {
+			rockchip,pins = <2 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	csi_resetpins {
+		csi1_reset: csi1-reset {
+			rockchip,pins = <1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		csi2_reset: csi2-reset {
+			rockchip,pins = <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	headphone {
+		hp_con: hp-con {
+			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		hp_det: hp-det {
+			rockchip,pins = <4 RK_PB4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	leds {
+		som_led: som-led {
+			rockchip,pins = <0 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		user_led1: user-led1 {
+			rockchip,pins = <0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		user_led2: user-led2 {
+			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	touch {
+		gt911_int: gt911-int {
+			rockchip,pins = <2 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	usb {
+		usbc0_int: usbc0-int {
+			rockchip,pins = <2 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+&reserved_memory {
+	/* CMA: 256MB */
+	cma: cma {
+		compatible = "shared-dma-pool";
+		reusable;
+		size = <0x0 (256 * 0x100000)>;
+		linux,cma-default;
+	};
+
+	drm_logo: drm-logo@0 {
+		compatible = "rockchip,drm-logo";
+		reg = <0x0 0x0 0x0 0x0>;
+	};
+
+	drm_cubic_lut: drm-cubic-lut@0 {
+		compatible = "rockchip,drm-cubic-lut";
+		reg = <0x0 0x0 0x0 0x0>;
+	};
+
+	ramoops: ramoops@40110000 {
+		compatible = "ramoops";
+		/* 0x40110000 to 0x401f0000 is for ramoops */
+		reg = <0x0 0x40110000 0x0 0xe0000>;
+		boot-log-size = <0x8000>;	/* do not change */
+		boot-log-count = <0x1>;		/* do not change */
+		console-size = <0x80000>;
+		pmsg-size = <0x30000>;
+		ftrace-size = <0x00000>;
+		record-size = <0x14000>;
+	};
+};
+
+&rga2_core0 {
+	status = "okay";
+};
+
+&rga2_core0_mmu {
+	status = "okay";
+};
+
+/* CIF：默认关闭，由 overlay (rk3572-tl3572-minievm-camera-csi1/csi2.dtso) 打开 */
+&rkcif {
+	status = "disabled";
+};
+
+&rkcif_mipi_lvds {
+	status = "disabled";
+	port {
+		cif_mipi_in0: endpoint {
+			remote-endpoint = <&mipi0_csi2_output>;
+		};
+	};
+};
+
+&rkcif_mipi_lvds2 {
+	status = "disabled";
+	port {
+		cif_mipi3_in0: endpoint {
+			remote-endpoint = <&mipi2_csi2_output>;
+		};
+	};
+};
+
+&rkcif_mipi_lvds2_sditf {
+	status = "disabled";
+	port {
+		mipi_lvds3_sditf: endpoint {
+			remote-endpoint = <&isp_vir0_in1>;
+		};
+	};
+};
+
+&rkcif_mipi_lvds_sditf {
+	status = "disabled";
+	port {
+		mipi_lvds_sditf: endpoint {
+			remote-endpoint = <&isp_vir0_in0>;
+		};
+	};
+};
+
+&rkcif_mmu {
+	status = "disabled";
+};
+
+/* ISP：默认关闭，由 overlay (rk3572-tl3572-minievm-camera-csi1/csi2.dtso) 打开 */
+&rkisp {
+	status = "disabled";
+};
+
+&rkisp_mmu {
+	status = "disabled";
+};
+
+&rkisp_vir0 {
+	status = "disabled";
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		isp_vir0_in0: endpoint@0 {
+			reg = <0>;
+			remote-endpoint = <&mipi_lvds_sditf>;
+		};
+
+		isp_vir0_in1: endpoint@1 {
+			reg = <1>;
+			remote-endpoint = <&mipi_lvds3_sditf>;
+		};
+	};
+};
+
+&rkisp_vir0_sditf {
+	status = "disabled";
+};
+
+&rknpu {
+	rknpu-supply = <&vdd_npu_s0>;
+	status = "okay";
+};
+
+&rknpu_mmu {
+	status = "okay";
+};
+
+&rkvdec {
+	status = "okay";
+};
+
+&rkvdec_mmu {
+	status = "okay";
+};
+
+&rkvenc {
+	status = "okay";
+};
+
+&rkvenc_mmu {
+	status = "okay";
+};
+
+&rkvpss {
+	status = "disabled";
+};
+
+&rkvpss_mmu {
+	status = "disabled";
+};
+
+&rkvpss_vir0 {
+	status = "disabled";
+};
+
+&rng {
+	status = "okay";
+};
+
+&rockchip_suspend {
+	status = "okay";
+	rockchip,sleep-debug-en = <1>;
+	rockchip,sleep-io-ret-config = <
+		(0
+		| RKPM_VCCIO3_RET_EN
+		)
+	>;
+	rockchip,sleep-pin-config = <(0) (0)>;
+};
+
+/* DSI 路由，默认关闭，由 overlay 打开 */
+&route_dsi {
+	connect = <&vp1_out_dsi>;
+	status = "disabled";
+};
+
+&route_hdmi {
+	status = "okay";
+	connect = <&vp0_out_hdmi>;
+};
+
+/* SAI0_M1：音频接口 */
+&sai0 {
+	status = "okay";
+	/delete-property/ pinctrl-0;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sai0m1_lrck_pins
+		     &sai0m1_sclk_pins
+		     &sai0m1_sdi0_pins
+		     &sai0m1_sdo0_pins>;
+};
+
+&sai4 {
+	status = "okay";
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
+};
+
+&saradc {
+	status = "okay";
+	vref-supply = <&vccio_1v8_s0>;
+};
+
+&sdhci {
+	bus-width = <8>;
+	no-sdio;
+	no-sd;
+	non-removable;
+	max-frequency = <200000000>;
+	mmc-hs400-1_8v;
+	mmc-hs400-enhanced-strobe;
+	full-pwr-cycle-in-suspend;
+	status = "okay";
+};
+
+&sdmmc0 {
+	max-frequency = <200000000>;
+	no-sdio;
+	no-mmc;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	sd-uhs-sdr104;
+	vmmc-supply = <&vcc3v3_sd_s0>;
+	vqmmc-supply = <&vccio_sd_s0>;
+	status = "okay";
+};
+
+/* SPI1_M2：4-wire，引出到 EXPORT2 pin11/13/14/15 */
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi1m2_pins &spi1m2_csn0_pins>;
+	status = "okay";
+
+	spidev@0 {
+		compatible = "rockchip,spidev";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		status = "okay";
+	};
+};
+
+/* SPI4_M1：XPT2046 电阻触摸控制器 */
+&spi4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi4m1_pins &spi4m1_csn1_pins>;
+	status = "okay";
+
+	xpt2046: touchscreen@1 {
+		compatible = "ti,ads7846";
+		reg = <1>;
+		status = "disabled";
+		spi-max-frequency = <2000000>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <RK_PA4 IRQ_TYPE_EDGE_FALLING>;
+		pendown-gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_LOW>;
+		ti,x-min = /bits/ 16 <0>;
+		ti,x-max = /bits/ 16 <4095>;
+		ti,y-min = /bits/ 16 <0>;
+		ti,y-max = /bits/ 16 <4095>;
+		ti,x-plate-ohms = /bits/ 16 <100>;
+		ti,pressure-max = /bits/ 16 <255>;
+		linux,gpio-keymap = <KEY_ESC>;
+	};
+};
+
+&tsadc {
+	status = "okay";
+};
+
+&u2phy0 {
+	orientation-switch;
+	status = "okay";
+};
+
+&u2phy0_otg {
+	rockchip,typec-vbus-det;
+	status = "okay";
+};
+
+&u2phy1 {
+	status = "okay";
+};
+
+/* USB3.0 Host：无 VBUS 供电控制，去掉 phy-supply */
+&u2phy1_otg {
+	status = "okay";
+};
+
+/* UART10_M0（EXPORT2 pin19 RX / pin21 TX） */
+&uart10 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart10m0_xfer_pins>;
+	status = "okay";
+};
+
+/* UART2_M1（EXPORT1 pin15 TX / pin17 RX） */
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2m1_xfer_pins>;
+	status = "okay";
+};
+
+/* UART3_M1（EXPORT2 pin23 TX / pin27 RX） */
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3m1_xfer_pins>;
+	status = "okay";
+};
+
+/* UART4_M0：路由到 EXPORT2 pin28(RX)/pin30(TX) */
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4m0_xfer_pins>;
+	status = "okay";
+};
+
+/* UART5_M0（EXPORT2 pin5 TX / pin7 RX） */
+&uart5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart5m0_xfer_pins>;
+	status = "okay";
+};
+
+/*
+ * UFS：由 SOM-TL3572-S 引出（原理图 SOM CONNECTOR CON0 pin222~231：
+ *   UFS_TX_D0/D1、UFS_RX_D0/D1、UFS_REFCLK、UFS_RSTN），
+ * 且模组默认从 UFS 启动（P5 BOOT MODE CONFIG 的 Config7：UFS->USB，S1100 ON）。
+ * reset 脚 UFS_RSTN = GPIO4_C0
+ * MiniEVM板并未引出UFS，故不使能。
+ */
+&ufs {
+	reset-gpios = <&gpio4 RK_PC0 GPIO_ACTIVE_HIGH>;
+	status = "disabled";
+};
+
+/* USB3.0 DRD0：Type-C，OTG */
+&usb_drd0_dwc3 {
+	dr_mode = "otg";
+	usb-role-switch;
+	status = "okay";
+};
+
+/* USB3.0 DRD1：USB3.0 Host */
+&usb_drd1_dwc3 {
+	dr_mode = "host";
+	/* USB3.0 SuperSpeed：加入 USB3 PHY */
+	phys = <&u2phy1_otg>, <&combphy1_psu PHY_TYPE_USB3>;
+	phy-names = "usb2-phy", "usb3-phy";
+	snps,dis_u2_susphy_quirk;
+	snps,usb2-lpm-disable;
+	status = "okay";
+};
+
+&vdpp {
+	status = "okay";
+};
+
+&vop {
+	status = "okay";
+	rockchip,disable-afbc-mask = <(1 << ROCKCHIP_VOP2_CLUSTER1)>;
+};
+
+&vop_mmu {
+	status = "okay";
+};

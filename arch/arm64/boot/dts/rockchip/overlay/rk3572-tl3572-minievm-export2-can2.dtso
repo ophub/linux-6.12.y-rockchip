@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM EXPORT2 替代组合 overlay：CAN2（替代默认 I2C4）
+ *
+ * 占用 EXPORT2(CON14)：
+ *   pin 18 = GPIO3_C0 / CAN2_TX_M2
+ *   pin 16 = GPIO3_B7 / CAN2_RX_M2
+ * 互斥关系（EXPORT2 pin16/18 组）：
+ *   默认 = I2C4；替代 = CAN2 / SAI1(sdi0/sdo3)。
+ * 本 overlay 会关闭默认的 &i2c4，并使能 &can2（M2，CAN-FD）。
+ * 注意：不可与 export1-sai1.dtbo 同时叠加（SAI1 会占用 pin16/18）。
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	/* 关闭默认的 I2C4（占用 EXPORT2 pin16/18） */
+	fragment@0 {
+		target = <&i2c4>;
+
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	/* 使能 CAN2 到 EXPORT2 pin16/18（M2） */
+	fragment@1 {
+		target = <&can2>;
+
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&can2m2_pins>;
+			status = "okay";
+		};
+	};
+};

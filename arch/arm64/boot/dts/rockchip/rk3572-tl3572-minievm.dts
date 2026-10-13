@@ -1291,6 +1291,11 @@
 		reg = <0x0>;
 		clocks = <&cru REFCLKO25M_GMAC0_OUT>;
 
+		/* LED1: Yellow */
+		maxio,led1-triggers = "activity";
+		/* LED2: Green */
+		maxio,led2-triggers = "link-10", "link-100", "link-1000";
+
 		reset-assert-us = <20000>;
 		reset-deassert-us = <100000>;
 		reset-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_LOW>;
@@ -1303,6 +1308,11 @@
 		compatible = "ethernet-phy-id7b74.4412";
 		reg = <0x1>;
 		clocks = <&cru REFCLKO25M_GMAC1_OUT>;
+
+		/* LED1: Yellow */
+		maxio,led1-triggers = "activity";
+		/* LED2: Green */
+		maxio,led2-triggers = "link-10", "link-100", "link-1000";
 
 		reset-assert-us = <20000>;
 		reset-deassert-us = <100000>;

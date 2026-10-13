@@ -898,7 +898,7 @@ static ssize_t aw87xxx_attr_set_hwen(struct device *dev,
 	return len;
 }
 
-int aw87xxx_awrw_write(struct aw87xxx *aw87xxx,
+static int aw87xxx_awrw_write(struct aw87xxx *aw87xxx,
 			const char *buf, size_t count)
 {
 	int i = 0, ret = -1;
@@ -1151,7 +1151,7 @@ static struct attribute_group aw87xxx_attribute_group = {
  *
  ****************************************************************************/
 
-int aw87xxx_dtsi_dev_index_check(struct aw87xxx *cur_aw87xxx)
+static int aw87xxx_dtsi_dev_index_check(struct aw87xxx *cur_aw87xxx)
 {
 	struct list_head *pos = NULL;
 	struct aw87xxx *list_aw87xxx = NULL;

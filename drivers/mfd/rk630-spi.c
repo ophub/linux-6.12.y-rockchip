@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/mfd/rk630.h>
+#include <linux/slab.h>
 #include <linux/spi/spi.h>
 
 #define RK630_CMD_WRITE			0x00000011
@@ -86,16 +87,25 @@ static int rk630_regmap_write(void *context, const void *data, size_t count)
 {
 	struct device *dev = context;
 	struct spi_device *spi = to_spi_device(dev);
-	u32 buf[count];
+	u32 *buf;
+	int ret;
 
 	if (count < 8) {
 		dev_err(&spi->dev, "regmap write err!\n");
 		return -EINVAL;
 	}
 
+	buf = kmalloc(count, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
 	memcpy(buf, data, count);
 
-	return rk630_spi_write(spi, buf[0], &buf[1], (count - 4));
+	ret = rk630_spi_write(spi, buf[0], &buf[1], (count - 4));
+
+	kfree(buf);
+
+	return ret;
 }
 
 static int rk630_spi_read(struct spi_device *spi,

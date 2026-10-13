@@ -13,7 +13,7 @@
  *                   pin 20 = PCIE1_RXP
  *                   pin 23 = GPIO2_D0 (预设为reset-gpios)
  *                   pin 2  = VDD_3V3_IO
- *                   pin 9/29/20/22  = GND
+ *                   pin 3/4/5/7/10/13/16/21/22/24/26/29/30  = GND
  */
 
 

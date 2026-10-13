@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 unifreq <flippy@sina.com>
+ *
+ * TL3572-MiniEVM 自身不带rtc
+ * 利用 EXPORT2 PIN16 PIN18 接入外部ds1307/ds3231等rtc模组
+ *
+ * 占用 EXPORT2(CON14)：
+ *   PIN 16 = GPIO3_B7 / I2C4_SDA_M3
+ *   PIN 18 = GPIO3_C0 / I2C4_SCL_M3
+ *   PIN  2 = VDD_3V3_IO
+ *   PIN 3/4/9/20/22/29 = GND
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target = <&i2c4>;
+
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			rtc: rtc@68 {
+				compatible = "maxim,ds3231", "dallas,ds1307";
+				reg = <0x68>;
+				status = "okay";
+			};
+		};
+	};
+};

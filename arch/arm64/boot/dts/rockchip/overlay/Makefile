@@ -154,6 +154,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export1-sai1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export2-can0.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export2-can2.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export2-i2c3.dtbo
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export2-i2c4-ds1307.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export2-i2c5.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export2-i2c8.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export2-pdm.dtbo

@@ -353,7 +353,7 @@ static int lt8619c_get_detected_timings(struct v4l2_subdev *sd,
 	bt->pixelclock = pix_clk;
 
 	fps = 0;
-	if (htotal * vtotal)
+	if (htotal && vtotal)
 		fps = (pix_clk + (htotal * vtotal) / 2) / (htotal * vtotal);
 
 	/* for interlaced res 1080i 576i 480i */

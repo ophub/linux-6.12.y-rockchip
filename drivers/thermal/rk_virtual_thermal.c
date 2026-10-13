@@ -30,6 +30,7 @@
 #include <linux/clk-provider.h>
 #include <dt-bindings/clock/rk3128-cru.h>
 
+#include "rk_virtual_thermal.h"
 #include "thermal_core.h"
 
 #ifndef CLK_NR_CLKS

@@ -291,6 +291,7 @@ obj-$(CONFIG_VIDEO_SENSOR_ADAPTER) += sensor_adapter.o
 obj-$(CONFIG_VIDEO_SGM3784) += sgm3784.o
 obj-$(CONFIG_VIDEO_SONY_BTF_MPX) += sony-btf-mpx.o
 obj-$(CONFIG_VIDEO_ST_MIPID02) += st-mipid02.o
+obj-$(CONFIG_VIDEO_XS9922)     += xs9922.o
 obj-$(CONFIG_VIDEO_TC358743) += tc358743.o
 obj-$(CONFIG_VIDEO_TC358746) += tc358746.o
 obj-$(CONFIG_VIDEO_TC35874X) += tc35874x.o

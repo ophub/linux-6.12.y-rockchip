@@ -28,6 +28,7 @@
 #include <linux/rk-preisp.h>
 #include <linux/of_graph.h>
 #include "../platform/rockchip/cif/rkcif-externel.h"
+#include "sensor_adapter.h"
 
 #define DRIVER_VERSION			KERNEL_VERSION(0, 0x01, 0x0)
 

@@ -23,6 +23,15 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			/* Taobao DS3231 模块通常自带一片 AT24C32 */
+			eeprom_24c32: eeprom@57 {
+				compatible = "atmel,24c32";
+				reg = <0x57>;
+				pagesize = <32>;
+				/* 可选，但建议加上 */
+				size = <4096>;
+			};
+
 			rtc: rtc@68 {
 				compatible = "maxim,ds3231", "dallas,ds1307";
 				reg = <0x68>;

@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * PCIe3.0 x4（PCIE30X4）：由 4-lane 聚合改为 Port0 的 2-lane
+ *
+ * 适用场景
+ *   RK3588 的 PCIE30X4 插槽在硬件上由 Port0(lane0/1, PHY0) 与
+ *   Port1(lane2/3, PHY1) 聚合而成，板级 DT 默认使用
+ *   PHY_MODE_PCIE_AGGREGATION，以便 NVMe 等 x4 设备跑满带宽。
+ *
+ *   但只使用 lane0/1（x1 或 x2）的板卡不会在 lane2/3 上提供端接，
+ *   PHY1 因而已法完成内部 SRAM init（一直停在 0x7），而 AGGREGATION
+ *   模式要求 PHY0 与 PHY1 **都**完成校准，于是整条 pcie3x4 控制器
+ *   probe 失败（rk-pcie: phy lock failed / -ETIMEDOUT -110），插在该
+ *   槽上的 x1/x2 板卡无法枚举。
+ *
+ * 本 overlay 做什么
+ *   - rockchip,pcie30-phymode = <PHY_MODE_PCIE_NANBNB>(0)：
+ *     非聚合，P1:x2 + P0:x2；校准只要求任一 PHY 完成，PHY0 正常即可
+ *     放行。Port0 归 pcie3x4(lane0/1)，Port1 归 pcie3x2(lane2/3)。
+ *   - num-lanes = <2>：与 Port0 的两条 lane 对齐；x1 板卡会在 lane0 上
+ *     自动协商为 x1。
+ *
+ * 适用范围
+ *   只依赖 SoC 级 label（pcie3x4 / pcie30phy，定义于 rk3588.dtsi），
+ *   不包含任何板级私有内容，因此任何 dtb 含这两个节点的板子都可直接
+ *   使用，无需修改本文件。若某 dtb 不含这些节点，bootloader 应用本
+ *   overlay 会失败并自动回退到原始 DT（不影响启动）。
+ *
+ * 用法
+ *   1) make dtbs
+ *      产物：arch/arm64/boot/dts/rockchip/overlay/rk3588-pcie3x4-x2.dtbo
+ *   2) 拷贝到目标机 /boot/dtb/rockchip/overlay/
+ *   3) /boot/bootEnv.txt 增加一行（boot.cmd 会用 overlay_prefix=rk3588
+ *      拼成 rk3588-pcie3x4-x2.dtbo 再 fdt apply）：
+ *          overlays=pcie3x4-x2
+ *   4) 重启。不需要时把 overlays= 置空即可恢复 Gen3 x4。
+ *
+ * 注意：本 overlay 只修改已有属性的值，不新增/删除节点；必须由
+ *       bootloader 在启动内核之前应用（PCIe 控制器 probe 之后再改无效）。
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/phy/phy-snps-pcie3.h>
+
+/ {
+	fragment@0 {
+		target = <&pcie30phy>;
+
+		__overlay__ {
+			rockchip,pcie30-phymode = <PHY_MODE_PCIE_NANBNB>;
+		};
+	};
+
+	fragment@1 {
+		target = <&pcie3x4>;
+
+		__overlay__ {
+			num-lanes = <2>;
+		};
+	};
+};

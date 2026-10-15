@@ -1748,6 +1748,19 @@
  * H88K v3.1: pcie3x4 is M.2 (M Key) socket for NVME ssd
  */
 &pcie30phy {
+	/*
+	 * 默认保持 AGGREGATION(4)：PCIE30X4 聚合 Port0(lane0/1, PHY0) +
+	 * Port1(lane2/3, PHY1)，M.2 槽的 NVMe 跑满 Gen3 x4。
+	 *
+	 * 注意：只使用 lane0 的 x1 卡（如 RK1828，实测链路 gen2x1）不会在
+	 * lane2/3 上提供端接，PHY1 永远停在 0x7；而 AGGREGATION 要求 PHY0 且
+	 * PHY1 都完成 SRAM init ⇒ 整条控制器 probe 失败（phy lock failed / -110），
+	 * 卡无法枚举。这种场景请改用通用 overlay（适用于所有含 pcie3x4 /
+	 * pcie30phy 节点的板子）：
+	 *	/boot/bootEnv.txt: overlays=pcie3x4-x2
+	 * （见 overlay/rk3588-pcie3x4-x2.dtso，它把本属性改为
+	 *   <PHY_MODE_PCIE_NANBNB> 并给 &pcie3x4 加 num-lanes = <2>）
+	 */
 	rockchip,pcie30-phymode = <PHY_MODE_PCIE_AGGREGATION>;
 	status = "okay";
 };

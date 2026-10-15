@@ -212,6 +212,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-ov13850-c3.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-ov13855-c1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-ov13855-c2.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-ov13855-c3.dtbo
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-pcie3x4-x2.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-pwm0-m0.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-pwm0-m1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-pwm0-m2.dtbo

@@ -3104,6 +3104,7 @@ nla_put_failure:
 }
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
+#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 static int
 ctnetlink_expect_event(unsigned int events, const struct nf_exp_event *item)
 {
@@ -3152,6 +3153,7 @@ errout:
 	nfnetlink_set_err(net, 0, 0, -ENOBUFS);
 	return 0;
 }
+#endif
 #endif
 static int ctnetlink_exp_done(struct netlink_callback *cb)
 {

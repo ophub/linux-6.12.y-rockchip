@@ -37,26 +37,26 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			dp_mipi_in: endpoint@1 {
-				reg = <1>;
+			dp_mipi_in: endpoint@7 {
+				reg = <7>;
 				remote-endpoint = <&lt7911uxc_out>;
 				data-lanes = <1 2 3 4>;
 			};
 
-			hdmi_mipi0_in: endpoint@2 {
-				reg = <2>;
+			hdmi_mipi0_in: endpoint@8 {
+				reg = <8>;
 				remote-endpoint = <&lt8668sx_out0>;
 				data-lanes = <1 2 3 4>;
 			};
 
-			hdmi1_mipi0_in: endpoint@3 {
-				reg = <3>;
+			hdmi1_mipi0_in: endpoint@9 {
+				reg = <9>;
 				remote-endpoint = <&lt6911uxe_out0>;
 				data-lanes = <1 2 3 4>;
 			};
 
-			hdmi2_mipi0_in: endpoint@4 {
-				reg = <4>;
+			hdmi2_mipi0_in: endpoint@a {
+				reg = <10>;
 				remote-endpoint = <&lt6911uxc_out0>;
 				data-lanes = <1 2 3 4>;
 			};

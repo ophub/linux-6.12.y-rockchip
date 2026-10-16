@@ -20,14 +20,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			csi_dphy_input0: endpoint@1 {
-				reg = <1>;
+			dcam_dphy_input0: endpoint@b {
+				reg = <11>;
 				remote-endpoint = <&imx415_out0>;
 				data-lanes = <1 2 3 4>;
 			};
 
-			csi_dphy_input1: endpoint@2 {
-				reg = <2>;
+			dcam_dphy_input1: endpoint@c {
+				reg = <12>;
 				remote-endpoint = <&sc850sl_out0>;
 				data-lanes = <1 2 3 4>;
 			};
@@ -100,7 +100,7 @@
 		rockchip,camera-module-lens-name = "default";
 		port {
 			imx415_out0: endpoint {
-				remote-endpoint = <&csi_dphy_input0>;
+				remote-endpoint = <&dcam_dphy_input0>;
 				data-lanes = <1 2 3 4>;
 			};
 		};
@@ -142,7 +142,7 @@
 		rockchip,camera-module-lens-name = "default";
 		port {
 			sc850sl_out0: endpoint {
-				remote-endpoint = <&csi_dphy_input1>;
+				remote-endpoint = <&dcam_dphy_input1>;
 				data-lanes = <1 2 3 4>;
 			};
 		};

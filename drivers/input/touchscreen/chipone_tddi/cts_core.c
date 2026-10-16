@@ -1396,7 +1396,7 @@ int cts_irq_handler(struct cts_device *cts_dev)
             struct cts_device_gesture_info *gesture_info;
 
             gesture_info = &cts_dev->rtdata.gesture_info;
-            memcpy(gesture_info, touch_info, sizeof(struct cts_device_gesture_info));
+            memmove(gesture_info, touch_info, sizeof(struct cts_device_gesture_info));
 
             ret = cts_plat_process_gesture_info(cts_dev->pdata, gesture_info);
 

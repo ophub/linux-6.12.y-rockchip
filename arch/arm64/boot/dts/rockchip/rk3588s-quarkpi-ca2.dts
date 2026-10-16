@@ -75,7 +75,7 @@
 			linux,cma-default;
 		};
 
-		drm_cubic_lut: drm-cubic-lut@00000000 {
+		drm_cubic_lut: drm-cubic-lut@0 {
 			compatible = "rockchip,drm-cubic-lut";
 			reg = <0x0 0x0 0x0 0x0>;
 			status = "disabled";

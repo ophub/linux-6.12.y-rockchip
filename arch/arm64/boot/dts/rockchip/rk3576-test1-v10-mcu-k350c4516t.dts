@@ -239,7 +239,7 @@
 	status = "disabled";
 };
 
-&vp2 {
+&vop {
 	mcu-timing {
 		mcu-pix-total = <5>;
 		mcu-cs-pst = <1>;

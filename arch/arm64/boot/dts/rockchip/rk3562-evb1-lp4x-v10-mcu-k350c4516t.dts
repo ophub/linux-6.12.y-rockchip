@@ -247,11 +247,11 @@
 	status = "disabled";
 };
 
-&vop {
+&vp0 {
 	status = "okay";
 };
 
-&vp0 {
+&vop {
 	status = "okay";
 
 	/*

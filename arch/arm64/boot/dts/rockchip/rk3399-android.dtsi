@@ -53,7 +53,7 @@
 			reg = <0x0 0x0 0x0 0x0>;
 		};
 
-		vendor_storage_rm: vendor-storage-rm@00000000 {
+		vendor_storage_rm: vendor-storage-rm@0 {
 			compatible = "rockchip,vendor-storage-rm";
 			reg = <0x0 0x0 0x0 0x0>;
 		};
@@ -73,7 +73,7 @@
 			status = "disabled";
 		};
 
-		stb_devinfo: stb-devinfo@00000000 {
+		stb_devinfo: stb-devinfo@0 {
 			compatible = "rockchip,stb-devinfo";
 			reg = <0x0 0x0 0x0 0x0>;
 		};

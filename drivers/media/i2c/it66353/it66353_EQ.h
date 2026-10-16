@@ -12,9 +12,9 @@
 #ifndef it66353_EQH
 #define it66353_EQH
 
-// #define it66353_eq_reset_state(x)\
+// #define it66353_eq_reset_state(x)
 // { it66353_gdev.EQ.EQ_flag_20 = SysAEQ_RUN; it66353_gdev.EQ.EQ_flag_14 = SysAEQ_RUN; }
-// #define _eq_reset_txoe(x)\
+// #define _eq_reset_txoe(x)
 // { it66353_gdev.EQ.txoe_ready20 = 0; it66353_gdev.EQ.txoe_ready14 = 0; }
 
 #endif

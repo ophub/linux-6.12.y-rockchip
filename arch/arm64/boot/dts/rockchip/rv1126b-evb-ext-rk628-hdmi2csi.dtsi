@@ -42,8 +42,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			hdmi_mipi_in: endpoint@1 {
-				reg = <1>;
+			hdmi_mipi_in: endpoint@b {
+				reg = <11>;
 				remote-endpoint = <&hdmiin_out>;
 				data-lanes = <1 2 3 4>;
 			};

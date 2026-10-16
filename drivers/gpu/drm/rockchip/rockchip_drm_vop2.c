@@ -20041,6 +20041,8 @@ static int vop2_bind(struct device *dev, struct device *master, void *data)
 			}
 
 			mcu_timing_node = of_get_child_by_name(child, "mcu-timing");
+			if (!mcu_timing_node)
+				mcu_timing_node = of_get_child_by_name(dev->of_node, "mcu-timing");
 			if (mcu_timing_node) {
 				if (!of_property_read_u32(mcu_timing_node, "mcu-pix-total", &val))
 					vop2->vps[vp_id].mcu_timing.mcu_pix_total = val;

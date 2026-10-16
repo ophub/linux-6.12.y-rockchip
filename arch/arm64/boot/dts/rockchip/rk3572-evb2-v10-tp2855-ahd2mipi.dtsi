@@ -15,8 +15,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			mipi_dphy0_in_tp2855: endpoint@1 {
-				reg = <1>;
+			mipi_dphy0_in_tp2855: endpoint@7 {
+				reg = <7>;
 				remote-endpoint = <&tp2855_out0>;
 				data-lanes = <1 2 3 4>;
 			};

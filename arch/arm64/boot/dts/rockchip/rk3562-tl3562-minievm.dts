@@ -147,7 +147,7 @@
 			reg = <0x0 0x06800000 0x0 0x00800000>;
 			no-map;
 		};
-		amp_core3_mem_reserved: amp-core3-mem@0x7000000 {
+		amp_core3_mem_reserved: amp-core3-mem@7000000 {
 			reg = <0x0 0x07000000 0x0 0x00800000>;
 			no-map;
 		};

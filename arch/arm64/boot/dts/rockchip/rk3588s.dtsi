@@ -2444,6 +2444,7 @@
 
 	/omit-if-no-ref/
 	mipi_dcphy1: mipi_dcphy0: mipi-dcphy-dummy {
+		#phy-cells = <0>;
 	};
 
 	mipi0_csi2: mipi0-csi2 {

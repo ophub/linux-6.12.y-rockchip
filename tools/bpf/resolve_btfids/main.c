@@ -167,7 +167,7 @@ static int eprintf(int level, int var, const char *fmt, ...)
 #define pr_err(fmt, ...) \
 	eprintf(0, verbose, pr_fmt(fmt), ##__VA_ARGS__)
 #define pr_info(fmt, ...) \
-	eprintf(0, verbose, pr_fmt(fmt), ##__VA_ARGS__)
+	eprintf(1, verbose, pr_fmt(fmt), ##__VA_ARGS__)
 
 static bool is_btf_id(const char *name)
 {

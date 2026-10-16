@@ -72,6 +72,8 @@
         target = <&i2c4>;
 
         __overlay__ {
+        	#address-cells = <1>;
+        	#size-cells = <0>;
 			status = "okay";
 
             gc8034: gc8034@37 {

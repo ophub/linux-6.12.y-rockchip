@@ -231,7 +231,7 @@ static void pt_i2c_remove(struct i2c_client *client)
 #ifdef CONFIG_TOUCHSCREEN_PARADE_DEVICETREE_SUPPORT
 	const struct of_device_id *match;
 #endif
-	struct device *dev = &client->dev;
+	struct device *dev __maybe_unused = &client->dev;
 	struct pt_core_data *cd = i2c_get_clientdata(client);
 
 	pt_release(cd);

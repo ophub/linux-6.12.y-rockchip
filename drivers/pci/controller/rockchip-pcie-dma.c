@@ -24,6 +24,7 @@
 #include <linux/signal.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
+#include <linux/vmalloc.h>
 #include <uapi/linux/rk-pcie-dma.h>
 
 #include "rockchip-pcie-dma.h"

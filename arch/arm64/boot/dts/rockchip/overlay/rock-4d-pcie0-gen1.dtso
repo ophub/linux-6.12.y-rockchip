@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Radxa ROCK 4D: 把 PCIe0 限制到 Gen1 (2.5GT/s)
+ *
+ * 背景
+ * ----
+ * RK3576 的 PCIe0 控制器本身支持 Gen1/Gen2（rk3576.dtsi 默认
+ * max-link-speed = <2>），但 ROCK 4D 的 PCIe0 是通过 16pin FPC
+ * （原理图 J8，FPC_2X8P）引出的，接到 RK1828 算力卡后 Gen2 链路
+ * 余量不足：
+ *
+ *   - 冷启动时链路在 L0(0x11) 与 Recovery(0xd/0xf/0x10) 之间反复抖动，
+ *     LTSSM 最终停在 Polling.Compliance (0x3)；
+ *   - err_event 中 Receiver Error / Rx Recovery Request 饱和到 0xff，
+ *     Replay Timeout / Retry TLP / Completion Timeout 持续增长；
+ *   - 随后 EP 配置空间读回全 0xff（DLActive 清零），pcie-rkep 侧表现为
+ *     obj_info magic=0xffffffff、no bar4、MSI 申请失败，
+ *     用户态 mmap BAR5 报 "bar5 mmap size is out of limitation"。
+ *
+ * 同一张卡在链路被限制到 Gen1 后可以稳定枚举：BAR0~BAR5 全部分配成功、
+ * MSI 申请成功、obj_info magic=18 且 gen1x1，err_event 不再增长。
+ * 因此这里用运行时 overlay 的方式降级，保持板级 dts 不变，
+ * 等 PHY/参考时钟走线（FPC、连接器、AC 耦合）改善后再关闭本 overlay。
+ *
+ * 启用方式
+ * ----
+ * 1) 编译出 rock-4d-pcie0-gen1.dtbo，放到
+ *    /boot/dtb/rockchip/overlay/ 下；
+ * 2) 在 /boot/bootEnv.txt 的 overlays 中加入 pcie0-gen1，例如：
+ *      overlays=radxa-camera-4k pcie0-gen1
+ *    （bootEnv.txt 中已有 overlay_prefix=rock-4d，
+ *      U-Boot 会加载 rock-4d-pcie0-gen1.dtbo）
+ * 3) 重启后用下面命令确认：
+ *      lspci -vv -s 00:00.0 | grep -A1 LnkSta   # Speed 2.5GT/s, DLActive+
+ *      dmesg | grep pcie-rkep                   # magic=18 ... gen1x1
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target = <&pcie0>;
+
+		__overlay__ {
+			/* 禁止 Gen1 -> Gen2 速率切换，链路固定 2.5GT/s */
+			max-link-speed = <1>;
+		};
+	};
+};

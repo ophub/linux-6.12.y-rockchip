@@ -282,6 +282,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-w1-gpio3-b3.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-w1-gpio4-b1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-roc-pc-sata0.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rock-3a-sata.dtbo
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rock-4d-pcie0-gen1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rock-4d-radxa-camera-4k.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rock-5-itx-enable-sharp-lq133t1jw01-edp-lcd-disable-dp1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rock-5-itx-radxa-camera-4k-on-cam0.dtbo

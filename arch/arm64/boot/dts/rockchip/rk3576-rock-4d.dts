@@ -1044,7 +1044,14 @@
 
 &pcie0 {
 	reset-gpios = <&gpio2 RK_PB4 GPIO_ACTIVE_HIGH>;
+
+	/*
+	 * 放宽 PERST# 保持时间与建链等待时间（默认 200ms / 2000ms）。
+	 */
+	rockchip,perst-inactive-ms = <500>;
+	rockchip,wait-for-link-ms = <5000>;
 	rockchip,skip-scan-in-resume;
+
 	vpcie3v3-supply = <&vcc3v3_pcie>;
 	status = "okay";
 };

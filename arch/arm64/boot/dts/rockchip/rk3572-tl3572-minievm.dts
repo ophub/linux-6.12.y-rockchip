@@ -1573,6 +1573,7 @@
 /* ISP：默认关闭，由 overlay (rk3572-tl3572-minievm-camera-csi1/csi2.dtso) 打开 */
 &rkisp {
 	status = "disabled";
+	isp-supply = <&vdd_logic_s0>;
 };
 
 &rkisp_mmu {

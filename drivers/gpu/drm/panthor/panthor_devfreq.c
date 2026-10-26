@@ -19,6 +19,16 @@ struct panthor_devfreq {
 	/** @devfreq: devfreq device. */
 	struct devfreq *devfreq;
 
+	/**
+	 * @cooling: Cooling device registered for this devfreq.
+	 *
+	 * Kept so that panthor_devfreq_term() can unregister it before the
+	 * devfreq device goes away.  Without this the thermal core keeps a
+	 * dangling pointer to the freed struct devfreq and crashes in
+	 * devfreq_cooling_get_requested_power().
+	 */
+	struct thermal_cooling_device *cooling;
+
 	/** @gov_data: Governor data. */
 	struct devfreq_simple_ondemand_data gov_data;
 
@@ -239,8 +249,29 @@ int panthor_devfreq_init(struct panthor_device *ptdev)
 	cooling = devfreq_cooling_em_register(pdevfreq->devfreq, NULL);
 	if (IS_ERR(cooling))
 		DRM_DEV_INFO(dev, "Failed to register cooling device\n");
+	else
+		pdevfreq->cooling = cooling;
 
 	return 0;
+}
+
+void panthor_devfreq_term(struct panthor_device *ptdev)
+{
+	struct panthor_devfreq *pdevfreq = ptdev->devfreq;
+
+	if (!pdevfreq)
+		return;
+
+	/*
+	 * The cooling device holds a pointer to pdevfreq->devfreq, which is
+	 * released by the devres action of devm_devfreq_add_device().  It has
+	 * to be unregistered first, otherwise the thermal core keeps polling
+	 * a freed struct devfreq.
+	 */
+	if (pdevfreq->cooling) {
+		devfreq_cooling_unregister(pdevfreq->cooling);
+		pdevfreq->cooling = NULL;
+	}
 }
 
 int panthor_devfreq_resume(struct panthor_device *ptdev)

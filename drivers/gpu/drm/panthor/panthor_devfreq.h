@@ -11,6 +11,7 @@ struct panthor_device;
 struct panthor_devfreq;
 
 int panthor_devfreq_init(struct panthor_device *ptdev);
+void panthor_devfreq_term(struct panthor_device *ptdev);
 
 int panthor_devfreq_resume(struct panthor_device *ptdev);
 int panthor_devfreq_suspend(struct panthor_device *ptdev);

@@ -84,6 +84,14 @@ void panthor_device_unplug(struct panthor_device *ptdev)
 	panthor_mmu_unplug(ptdev);
 	panthor_gpu_unplug(ptdev);
 
+	/*
+	 * Unregister the devfreq cooling device while the devfreq device is
+	 * still alive.  It is released by the devres action of
+	 * devm_devfreq_add_device(), and the thermal core would otherwise keep
+	 * polling a freed struct devfreq.
+	 */
+	panthor_devfreq_term(ptdev);
+
 	pm_runtime_dont_use_autosuspend(ptdev->base.dev);
 	pm_runtime_put_sync_suspend(ptdev->base.dev);
 

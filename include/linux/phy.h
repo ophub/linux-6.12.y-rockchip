@@ -1247,6 +1247,23 @@ struct phy_driver {
 	 */
 	int (*led_polarity_set)(struct phy_device *dev, int index,
 				unsigned long modes);
+
+	/**
+	 * @led_dt_managed: Is the LED fully described by driver private
+	 *                  device tree properties?
+	 * @dev: PHY device which has the LED
+	 * @index: Which LED of the PHY device
+	 *
+	 * Some PHY drivers accept private device tree properties that fully
+	 * describe the LED behaviour (e.g. the RTL8211F "realtek,ledX-triggers"
+	 * and "realtek,led-data" properties).  For such LEDs the generic
+	 * phylib LED registration must be skipped, otherwise the netdev LED
+	 * trigger would take over the LED and fight with the configuration
+	 * programmed by the driver.
+	 *
+	 * Returns true if the LED is managed by the driver via device tree.
+	 */
+	bool (*led_dt_managed)(struct phy_device *dev, u8 index);
 };
 #define to_phy_driver(d) container_of_const(to_mdio_common_driver(d),		\
 				      struct phy_driver, mdiodrv)

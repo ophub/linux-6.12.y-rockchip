@@ -45,6 +45,15 @@
 #define RTL8211F_LEDCR_SHIFT			5
 #define RTL8211F_LEDCR_PAGE			0xd04
 
+/*
+ * EEE LED Control Register (page 0xd04, address 0x11).  Bits 3:1 enable the
+ * EEE LED indication for LED2/LED1/LED0 and default to 1.  With EEE enabled
+ * the LED keeps slowly blinking in EEE idle mode, which makes a "link"
+ * configured LED look like it is blinking instead of being steadily on.
+ */
+#define RTL8211F_EEELCR				0x11
+#define RTL8211F_EEELCR_LED_MASK		GENMASK(3, 1)
+
 #define RTL8211F_TX_DELAY			BIT(8)
 #define RTL8211F_RX_DELAY			BIT(3)
 
@@ -147,6 +156,24 @@ static const char * const rtl8211f_led_propnames[RTL8211F_LED_COUNT] = {
 	"realtek,led2-triggers",
 };
 
+/*
+ * Disable the EEE LED indication.  The EEELCR bits default to 1, which makes
+ * the PHY slowly blink the LED in EEE idle mode even when the LED is
+ * configured as a plain link indicator.
+ */
+static int rtl8211f_disable_eee_led(struct phy_device *phydev)
+{
+	int ret;
+
+	ret = phy_modify_paged(phydev, RTL8211F_LEDCR_PAGE, RTL8211F_EEELCR,
+			       RTL8211F_EEELCR_LED_MASK, 0);
+	if (ret < 0)
+		phydev_err(phydev, "Failed to disable EEE LED indication: %d\n",
+			   ret);
+
+	return ret;
+}
+
 static int rtl8211f_parse_led_data(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
@@ -168,6 +195,8 @@ static int rtl8211f_parse_led_data(struct phy_device *phydev)
 			   ret);
 		return ret;
 	}
+
+	rtl8211f_disable_eee_led(phydev);
 
 	priv->led_data = (u16)led_data;
 	priv->led_data_cfg = true;
@@ -232,6 +261,8 @@ static int rtl8211f_parse_led_triggers(struct phy_device *phydev, u8 led_index,
 		return ret;
 	}
 
+	rtl8211f_disable_eee_led(phydev);
+
 	priv->led_vals[led_index] = val;
 	priv->led_dts_cfg[led_index] = true;
 	phydev_dbg(phydev, "LED%d configured via DTS with triggers, val=0x%04x\n",
@@ -268,6 +299,8 @@ static void rtl8211f_restore_leds(struct phy_device *phydev)
 		if (ret < 0)
 			phydev_err(phydev, "Failed to restore LEDCR (led-data): %d\n",
 				   ret);
+		else
+			rtl8211f_disable_eee_led(phydev);
 		return;
 	}
 
@@ -288,6 +321,8 @@ static void rtl8211f_restore_leds(struct phy_device *phydev)
 			phydev_err(phydev, "Failed to restore LED%d config: %d\n",
 				   i, ret);
 	}
+
+	rtl8211f_disable_eee_led(phydev);
 }
 
 static bool rtl8211f_led_dts_managed(struct rtl821x_priv *priv, u8 index)
@@ -299,6 +334,17 @@ static bool rtl8211f_led_dts_managed(struct rtl821x_priv *priv, u8 index)
 		return true;
 
 	return index < RTL8211F_LED_COUNT && priv->led_dts_cfg[index];
+}
+
+/*
+ * Tell phylib not to register a generic LED class device for LEDs that are
+ * fully described by the "realtek,ledX-triggers" / "realtek,led-data" device
+ * tree properties.  Otherwise the netdev LED trigger would take over the LED
+ * and fight with the configuration programmed here.
+ */
+static bool rtl8211f_led_dt_managed(struct phy_device *phydev, u8 index)
+{
+	return rtl8211f_led_dts_managed(phydev->priv, index);
 }
 
 static int rtl821x_read_page(struct phy_device *phydev)
@@ -1616,6 +1662,7 @@ static struct phy_driver realtek_drvs[] = {
 		.led_hw_is_supported = rtl8211f_led_hw_is_supported,
 		.led_hw_control_get = rtl8211f_led_hw_control_get,
 		.led_hw_control_set = rtl8211f_led_hw_control_set,
+		.led_dt_managed	= rtl8211f_led_dt_managed,
 	}, {
 		PHY_ID_MATCH_EXACT(RTL_8211FVD_PHYID),
 		.name		= "RTL8211F-VD Gigabit Ethernet",
@@ -1629,6 +1676,7 @@ static struct phy_driver realtek_drvs[] = {
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
 		.flags		= PHY_ALWAYS_CALL_SUSPEND,
+		.led_dt_managed	= rtl8211f_led_dt_managed,
 	}, {
 		.name		= "Generic FE-GE Realtek PHY",
 		.match_phy_device = rtlgen_match_phy_device,

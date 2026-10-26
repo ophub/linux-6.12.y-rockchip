@@ -29,3 +29,30 @@
 		     <GIC_SPI 334 IRQ_TYPE_LEVEL_HIGH>;
 	interrupt-names = "job", "mmu", "gpu";
 };
+
+/*
+ * Drop the GPU cooling map.
+ *
+ * panthor registers a devfreq cooling device in panthor_devfreq_init() but
+ * never unregisters it, so the thermal core keeps a pointer to the struct
+ * devfreq that is freed by the devres action of devm_devfreq_add_device()
+ * when the GPU device goes away.  The next polling round dereferences the
+ * freed devfreq and panics:
+ *
+ *   Unable to handle kernel read from unreadable memory at virtual address 000000030000003c
+ *   pc : __mutex_lock.constprop.0+0x11c/0x840
+ *   Call trace:
+ *     mutex_lock
+ *     devfreq_cooling_get_requested_power+0x44/0x380
+ *     power_allocator_manage+0xc4/0x840
+ *     __thermal_zone_device_update+0x63c/0x6c0
+ *
+ * Without the cooling map the thermal zone no longer references the GPU
+ * cooling device, so the dangling pointer is never dereferenced.  The GPU
+ * simply does not take part in thermal mitigation.
+ */
+&littlecore_thermal {
+	cooling-maps {
+		/delete-node/ map3;
+	};
+};

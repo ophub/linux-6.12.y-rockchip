@@ -1389,6 +1389,17 @@ static bool yt8521_led_dts_managed(struct yt8521_priv *priv, u8 index)
 	return index < YT8521_MAX_LEDS && priv->led_dts_cfg[index];
 }
 
+/*
+ * Tell phylib not to register a generic LED class device for LEDs that are
+ * fully described by the "motorcomm,ledX-triggers" / "motorcomm,led-data"
+ * device tree properties.  Otherwise the netdev LED trigger would take over
+ * the LED and fight with the configuration programmed here.
+ */
+static bool yt8521_led_dt_managed(struct phy_device *phydev, u8 index)
+{
+	return yt8521_led_dts_managed(phydev->priv, index);
+}
+
 static int yt8521_led_hw_is_supported(struct phy_device *phydev, u8 index,
 				      unsigned long rules)
 {
@@ -3919,6 +3930,7 @@ static struct phy_driver motorcomm_phy_drvs[] = {
 		.led_hw_is_supported = yt8521_led_hw_is_supported,
 		.led_hw_control_set = yt8521_led_hw_control_set,
 		.led_hw_control_get = yt8521_led_hw_control_get,
+		.led_dt_managed	= yt8521_led_dt_managed,
 	},
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_YT8531),
@@ -3933,6 +3945,7 @@ static struct phy_driver motorcomm_phy_drvs[] = {
 		.led_hw_is_supported = yt8521_led_hw_is_supported,
 		.led_hw_control_set = yt8521_led_hw_control_set,
 		.led_hw_control_get = yt8521_led_hw_control_get,
+		.led_dt_managed	= yt8521_led_dt_managed,
 	},
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_YT8531S),
@@ -3953,6 +3966,7 @@ static struct phy_driver motorcomm_phy_drvs[] = {
 		.led_hw_is_supported = yt8521_led_hw_is_supported,
 		.led_hw_control_set = yt8521_led_hw_control_set,
 		.led_hw_control_get = yt8521_led_hw_control_get,
+		.led_dt_managed	= yt8521_led_dt_managed,
 	},
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_YT8821),

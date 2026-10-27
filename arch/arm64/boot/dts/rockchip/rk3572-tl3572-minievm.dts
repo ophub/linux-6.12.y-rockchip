@@ -789,11 +789,20 @@
 
 /* HDMI OUT：使能脚 GPIO0_D1 (HDMI_TX_ON_H)，HPD 走 HDMI_TX0 (GPIO4_B1) */
 &hdmi {
+	cec-enable;
+
+	/* DDC I2C speed: 50khz */
+	ddc-i2c-scl-high-time-ns = <9625>;
+	ddc-i2c-scl-low-time-ns = <10000>;
+
+	/* DDC I2C speed: 100khz */
+	//ddc-i2c-scl-high-time-ns = <4812>;
+	//ddc-i2c-scl-low-time-ns = <5000>;
+
 	enable-gpios = <&gpio0 RK_PD1 GPIO_ACTIVE_HIGH>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&hdmi_txm0_hpdin_pins
-		     &hdmi_txm0_ddc_pins
-		     &hdmi_txm0_cec_pins>;
+
+	rockchip,sda-falling-delay-ns = <360>;
+
 	status = "okay";
 };
 

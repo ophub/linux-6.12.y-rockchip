@@ -16,7 +16,7 @@
 
 &sfc0 {
 	status = "okay";
-	max-freq = <50000000>;
+	max-freq = <100000000>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-names = "default";
@@ -27,7 +27,7 @@
 		#size-cells = <0>;
 		compatible = "jedec,spi-nor";
 		reg = <0x0>;
-		spi-max-frequency = <50000000>;
+		spi-max-frequency = <100000000>;
 		spi-tx-bus-width = <1>;
 		spi-rx-bus-width = <4>;
 		status = "okay";

@@ -600,12 +600,11 @@ static int rknpu_release(struct inode *inode, struct file *file)
 		entry = list_first_entry(&local_list, struct rknpu_mem_object,
 					 head);
 
-		LOG_DEBUG(
-			"Fd close free rknpu_obj: %#llx, rknpu_obj->dma_addr: %#llx\n",
-			(__u64)(uintptr_t)entry, (__u64)entry->dma_addr);
+		LOG_DEBUG("Fd close free id: %u, rknpu_obj->dma_addr: %#llx\n",
+			  entry->id, (__u64)entry->dma_addr);
 
 		list_del(&entry->head);
-		rknpu_mem_object_free(entry);
+		rknpu_mem_object_put(entry);
 	}
 
 	kfree(session);
@@ -655,7 +654,7 @@ static long rknpu_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		ret = rknpu_action_ioctl(rknpu_dev, arg);
 		break;
 	case RKNPU_SUBMIT:
-		ret = rknpu_submit_ioctl(rknpu_dev, arg);
+		ret = rknpu_submit_ioctl(rknpu_dev, file, arg);
 		break;
 	case RKNPU_MEM_CREATE:
 		ret = rknpu_mem_create_ioctl(rknpu_dev, file, cmd, arg);
@@ -666,7 +665,7 @@ static long rknpu_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		ret = rknpu_mem_destroy_ioctl(rknpu_dev, file, arg);
 		break;
 	case RKNPU_MEM_SYNC:
-		ret = rknpu_mem_sync_ioctl(rknpu_dev, arg);
+		ret = rknpu_mem_sync_ioctl(rknpu_dev, file, arg);
 		break;
 	default:
 		break;

@@ -148,6 +148,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-camera-csi1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-camera-csi2.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-dsi800x1280-touch-gt911.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-dsi800x1280-touch-xpt2046.dtbo
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export1-hc-sr04.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export1-pcie1.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export1-spdif.dtbo
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3572-tl3572-minievm-export1-sai1.dtbo
